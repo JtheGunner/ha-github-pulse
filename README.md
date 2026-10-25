@@ -45,6 +45,9 @@ The integration is under development and not yet installable. See [`docs/concept
 | ⚙️ | Actions | Workflow runs and failure rates |
 | 🔧 | Custom queries | Your own read-only GraphQL queries |
 
+> [!TIP]
+> Charts for commits and language shares need no custom card: see the [dashboard example](docs/dashboard-example.md).
+
 > [!NOTE]
 > Why do totals differ from github.com, and why are some counts "restricted"? See [visible and restricted contributions](docs/contributions.md).
 
