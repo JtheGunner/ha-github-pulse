@@ -29,6 +29,7 @@ from .rhythm_fetch import fetch_event_times
 from .search_fetch import SearchCounts, fetch_search_counts
 from .settings import Settings
 from .statistics_import import build_series, import_series
+from .wip_fetch import WipStats, fetch_wip
 
 GROUP_CURRENT = "current"
 GROUP_HISTORY = "history"
@@ -36,6 +37,7 @@ GROUP_CALENDAR = "calendar"
 GROUP_LANGUAGES = "languages"
 GROUP_SEARCH = "search"
 GROUP_RHYTHM = "rhythm"
+GROUP_WIP = "wip"
 PROFILE_GROUPS = frozenset(
     {
         GROUP_CURRENT,
@@ -44,6 +46,7 @@ PROFILE_GROUPS = frozenset(
         GROUP_LANGUAGES,
         GROUP_SEARCH,
         GROUP_RHYTHM,
+        GROUP_WIP,
     }
 )
 
@@ -82,6 +85,7 @@ class ProfileCoordinator(GitHubPulseCoordinator):
             GROUP_LANGUAGES: self._fetch_languages,
             GROUP_SEARCH: self._fetch_search,
             GROUP_RHYTHM: self._fetch_rhythm,
+            GROUP_WIP: self._fetch_wip,
         }
         super().__init__(
             hass,
@@ -176,3 +180,8 @@ class ProfileCoordinator(GitHubPulseCoordinator):
             self.client, self.config_entry.runtime_data.login
         )
         return rhythm(times, dt_util.get_default_time_zone())
+
+    async def _fetch_wip(self) -> WipStats:
+        return await fetch_wip(
+            self.client, self.config_entry.runtime_data.login, dt_util.utcnow()
+        )
