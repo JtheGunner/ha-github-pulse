@@ -10,7 +10,7 @@
 [![Python](https://img.shields.io/badge/python-3.14-3776ab?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![Home Assistant](https://img.shields.io/badge/home%20assistant-2026.9%2B-0ea5e9?style=flat-square&logo=homeassistant&logoColor=white)](https://www.home-assistant.io/)
 [![HACS](https://img.shields.io/badge/HACS-custom-8b5cf6?style=flat-square)](https://hacs.xyz/)
-[![Status](https://img.shields.io/badge/status-beta-f59e0b?style=flat-square)](CHANGELOG.md)
+[![Status](https://img.shields.io/badge/status-stable-22c55e?style=flat-square)](CHANGELOG.md)
 
 </div>
 
