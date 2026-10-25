@@ -13,6 +13,11 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.typing import ConfigType
 
+from .actions_coordinator import (
+    GROUP_RUNS,
+    ActionsCoordinator,
+    actions_repositories,
+)
 from .api import GitHubClient
 from .const import CONF_MODULES, CONF_OWNER, DOMAIN, MODULE_PROFILE, MODULE_REPOSITORIES
 from .groups import GroupedEntity, active_groups
@@ -24,12 +29,13 @@ from .repository_coordinator import (
     RepositoryCoordinator,
     tracked_repositories,
 )
+from .sensor_actions import ACTIONS_BINARY_SENSORS, ACTIONS_SENSORS
 from .sensor_profile import PROFILE_SENSORS
 from .sensor_repository import REPOSITORY_SENSORS
 from .services import async_setup_services
 from .settings import Settings
 
-PLATFORMS: list[Platform] = [Platform.SENSOR]
+PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.BINARY_SENSOR]
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -75,6 +81,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: GitHubPulseConfigEntry) 
         )
         await repositories.async_config_entry_first_refresh()
         entry.runtime_data.repositories = repositories
+    if MODULE_REPOSITORIES in entry.runtime_data.modules and actions_repositories(
+        entry
+    ):
+        actions = ActionsCoordinator(
+            hass, entry, active_groups=_actions_groups(hass, entry)
+        )
+        await actions.async_config_entry_first_refresh()
+        entry.runtime_data.actions = actions
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(_async_reload_on_change(entry)))
     return True
@@ -153,6 +167,33 @@ def _repository_groups(
             (
                 GroupedEntity(d.key, d.group, d.entity_registry_enabled_default)
                 for d in REPOSITORY_SENSORS
+            ),
+            enabled,
+        )
+    return frozenset(needed)
+
+
+def _actions_groups(
+    hass: HomeAssistant, entry: GitHubPulseConfigEntry
+) -> frozenset[str]:
+    """Return the Actions data groups needed by the enabled entities."""
+    registry = er.async_get(hass)
+    needed: set[str] = set()
+    for full_name in actions_repositories(entry):
+
+        def enabled(key: str, full_name: str = full_name) -> bool | None:
+            unique_id = f"{entry.entry_id}_{full_name.lower()}_{key}"
+            for platform in (Platform.SENSOR, Platform.BINARY_SENSOR):
+                entity_id = registry.async_get_entity_id(platform, DOMAIN, unique_id)
+                if entity_id and (found := registry.async_get(entity_id)):
+                    return not found.disabled
+            return None
+
+        descriptions = [*ACTIONS_SENSORS, *ACTIONS_BINARY_SENSORS]
+        needed |= active_groups(
+            (
+                GroupedEntity(d.key, GROUP_RUNS, d.entity_registry_enabled_default)
+                for d in descriptions
             ),
             enabled,
         )
