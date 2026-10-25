@@ -79,6 +79,16 @@
         "commit_weighted": "By commits (repository language mix times your commits)",
         "repo_count": "By repositories (each repository counts once)"
       }
+    },
+    "query_preset": {
+      "options": {
+        "custom": "Write my own query",
+        "commits_this_month": "Commits this month",
+        "pull_requests_this_month": "Pull requests this month",
+        "contributions_this_year": "Contributions this year",
+        "public_repositories": "Public repositories",
+        "followers": "Followers"
+      }
     }
   },
   "entity": {
@@ -374,23 +384,9 @@
       "step": {
         "user": {
           "title": "Add a custom query",
-          "description": "Run your own read-only GraphQL query and turn its result into a sensor. {detail}",
+          "description": "Start from a ready-made query or write your own.",
           "data": {
-            "name": "Name",
-            "query": "GraphQL query",
-            "variables": "Variables (JSON object)",
-            "interval": "Update interval",
-            "state_template": "State template",
-            "attributes_template": "Attributes template",
-            "unit": "Unit of measurement",
-            "device_class": "Device class",
-            "state_class": "State class"
-          },
-          "data_description": {
-            "query": "A single `query`. Mutations are rejected. The variables `$owner`, `$start_of_month`, `$end_of_month`, `$start_of_year` and `$one_year_ago` are filled in when the query declares them.",
-            "variables": "Values for other declared variables as a JSON object, using the variable names as keys.",
-            "state_template": "A template over `value_json`, which holds the `data` of the response. It must render a single value.",
-            "attributes_template": "Optional. A template over `value_json` that must render a mapping."
+            "preset": "Starting point"
           }
         },
         "reconfigure": {
@@ -411,6 +407,27 @@
         "confirm": {
           "title": "Test run of {query_name}",
           "description": "The query ran successfully. Raw result:\n\n```json\n{raw}\n```\n\nRendered state: **{state}**\n\nSubmit to save the sensor."
+        },
+        "details": {
+          "title": "Add a custom query",
+          "description": "Run your own read-only GraphQL query and turn its result into a sensor. {detail}",
+          "data": {
+            "name": "Name",
+            "query": "GraphQL query",
+            "variables": "Variables (JSON object)",
+            "interval": "Update interval",
+            "state_template": "State template",
+            "attributes_template": "Attributes template",
+            "unit": "Unit of measurement",
+            "device_class": "Device class",
+            "state_class": "State class"
+          },
+          "data_description": {
+            "query": "A single `query`. Mutations are rejected. The variables `$owner`, `$start_of_month`, `$end_of_month`, `$start_of_year` and `$one_year_ago` are filled in when the query declares them.",
+            "variables": "Values for other declared variables as a JSON object, using the variable names as keys.",
+            "state_template": "A template over `value_json`, which holds the `data` of the response. It must render a single value.",
+            "attributes_template": "Optional. A template over `value_json` that must render a mapping."
+          }
         }
       },
       "error": {

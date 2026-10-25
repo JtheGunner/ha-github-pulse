@@ -61,7 +61,7 @@ The setup checks the token against every module you select and tells you what is
 | --- | --- | --- |
 | 👤 | Profile | Contributions, commits and pull requests this month; change versus last month and last year (like for like); busiest month; current and longest streak; top language and language shift (estimated) |
 | 📁 | Repositories | One device per repository: stars, forks, open issues and pull requests, latest release, CI state of the default branch |
-| 🧪 | Custom queries | Your own read-only GraphQL query as a sensor, added under **Add custom query**. Rendered with templates over `value_json` |
+| 🧪 | Custom queries | Your own read-only GraphQL query as a sensor, added under **Add custom query**. Rendered with templates over `value_json`. Presets included; see the [guide](docs/custom-queries.md) |
 | 🔔 | Optional sensors | Reviews, issues, active days, strongest weekday, watchers, release downloads, days since last commit or release, pull requests awaiting your review |
 
 Everything marked optional is created disabled. GitHub Pulse only fetches data that an enabled entity needs, so unused sensors cost no API calls.

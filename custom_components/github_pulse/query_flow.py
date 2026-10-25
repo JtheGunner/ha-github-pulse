@@ -52,9 +52,11 @@ from .custom_query import (
     run_query,
 )
 from .models import GitHubPulseConfigEntry
+from .query_presets import CUSTOM, PRESETS_BY_KEY, QueryPreset
 from .repository_flow import error_code
 from .settings import Settings
 
+CONF_PRESET = "preset"
 NONE_CHOICE = "none"
 MAX_INTERVAL = 24 * 60
 PREVIEW_LENGTH = 800
@@ -101,6 +103,19 @@ def parse_user_variables(raw: str) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise QueryFormError("invalid_variables", "expected a JSON object")
     return value
+
+
+def _preset_defaults(preset: QueryPreset | None) -> dict[str, Any]:
+    if preset is None:
+        return {}
+    return {
+        CONF_QUERY_NAME: preset.name,
+        CONF_QUERY: preset.query,
+        CONF_QUERY_INTERVAL: preset.interval,
+        CONF_STATE_TEMPLATE: preset.state_template,
+        CONF_UNIT: preset.unit,
+        CONF_STATE_CLASS: preset.state_class,
+    }
 
 
 def _schema(defaults: dict[str, Any]) -> probatio.Schema:
@@ -164,8 +179,30 @@ class QuerySubentryFlow(ConfigSubentryFlow):
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> SubentryFlowResult:
+        """Offer a preset as the starting point, or an empty form."""
+        if user_input is not None:
+            preset = PRESETS_BY_KEY.get(user_input[CONF_PRESET])
+            return await self._form("details", None, _preset_defaults(preset))
+        return self.async_show_form(
+            step_id="user",
+            data_schema=probatio.Schema(
+                {
+                    probatio.Required(CONF_PRESET, default=CUSTOM): SelectSelector(
+                        SelectSelectorConfig(
+                            options=[CUSTOM, *PRESETS_BY_KEY],
+                            mode=SelectSelectorMode.DROPDOWN,
+                            translation_key="query_preset",
+                        )
+                    )
+                }
+            ),
+        )
+
+    async def async_step_details(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
         """Collect the query and its sensor settings, validate and test-run it."""
-        return await self._form("user", user_input, {})
+        return await self._form("details", user_input, {})
 
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None
