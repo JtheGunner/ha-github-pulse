@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable, Coroutine
+from typing import Any
+
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ACCESS_TOKEN, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
@@ -56,7 +60,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: GitHubPulseConfigEntry) 
         await profile.async_config_entry_first_refresh()
         entry.runtime_data.profile = profile
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    entry.async_on_unload(entry.add_update_listener(_async_reload_on_change(entry)))
     return True
+
+
+def _async_reload_on_change(
+    entry: GitHubPulseConfigEntry,
+) -> Callable[[HomeAssistant, ConfigEntry[Any]], Coroutine[Any, Any, None]]:
+    """Reload when the options change or repositories are added, removed or changed."""
+    known = _snapshot(entry)
+
+    async def _listener(hass: HomeAssistant, updated: ConfigEntry[Any]) -> None:
+        nonlocal known
+        current = _snapshot(updated)
+        if current != known:
+            known = current
+            hass.config_entries.async_schedule_reload(updated.entry_id)
+
+    return _listener
 
 
 async def async_unload_entry(
@@ -64,6 +85,14 @@ async def async_unload_entry(
 ) -> bool:
     """Unload a config entry."""
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+
+def _snapshot(entry: ConfigEntry[Any]) -> dict[str, Any]:
+    """Return the parts of an entry whose change requires a reload."""
+    return {
+        "options": dict(entry.options),
+        "subentries": {key: dict(sub.data) for key, sub in entry.subentries.items()},
+    }
 
 
 def _profile_groups(
