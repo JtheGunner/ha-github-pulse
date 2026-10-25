@@ -38,6 +38,7 @@ from .api.probe import TokenInfo, fetch_token_info, probe_module
 from .const import (
     CONF_CONTRIBUTION_TIME_ZONE,
     CONF_HISTORY_YEARS,
+    CONF_IMPORT_STATISTICS,
     CONF_INCLUDE_RESTRICTED,
     CONF_LANGUAGE_WEIGHTING,
     CONF_MODULES,
@@ -47,6 +48,7 @@ from .const import (
     CONF_TOKEN_TYPE,
     DEFAULT_CONTRIBUTION_TIME_ZONE,
     DEFAULT_HISTORY_YEARS,
+    DEFAULT_IMPORT_STATISTICS,
     DEFAULT_INCLUDE_RESTRICTED,
     DEFAULT_PROFILE_INTERVAL,
     DEFAULT_REPOSITORY_INTERVAL,
@@ -137,6 +139,10 @@ def _options_schema(current: Mapping[str, Any]) -> probatio.Schema:
             probatio.Required(
                 CONF_INCLUDE_RESTRICTED,
                 default=default(CONF_INCLUDE_RESTRICTED, DEFAULT_INCLUDE_RESTRICTED),
+            ): BooleanSelector(),
+            probatio.Required(
+                CONF_IMPORT_STATISTICS,
+                default=default(CONF_IMPORT_STATISTICS, DEFAULT_IMPORT_STATISTICS),
             ): BooleanSelector(),
             probatio.Required(
                 CONF_LANGUAGE_WEIGHTING,

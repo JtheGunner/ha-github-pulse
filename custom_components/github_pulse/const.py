@@ -25,6 +25,7 @@ CONF_HISTORY_YEARS: Final = "history_years"
 CONF_CONTRIBUTION_TIME_ZONE: Final = "contribution_time_zone"
 CONF_INCLUDE_RESTRICTED: Final = "include_restricted"
 CONF_LANGUAGE_WEIGHTING: Final = "language_weighting"
+CONF_IMPORT_STATISTICS: Final = "import_statistics"
 
 WEIGHTING_COMMITS: Final = "commit_weighted"
 WEIGHTING_REPOSITORIES: Final = "repo_count"
@@ -45,3 +46,4 @@ MODULES: Final = (MODULE_PROFILE, MODULE_REPOSITORIES)
 DEFAULT_CONTRIBUTION_TIME_ZONE: Final = "America/Los_Angeles"
 DEFAULT_HISTORY_YEARS: Final = 3
 DEFAULT_INCLUDE_RESTRICTED: Final = True
+DEFAULT_IMPORT_STATISTICS: Final = False

@@ -1,8 +1,13 @@
 {
   "domain": "github_pulse",
   "name": "GitHub Pulse",
-  "codeowners": ["@JtheGunner"],
+  "codeowners": [
+    "@JtheGunner"
+  ],
   "config_flow": true,
+  "dependencies": [
+    "recorder"
+  ],
   "documentation": "https://github.com/JtheGunner/ha-github-pulse",
   "integration_type": "service",
   "iot_class": "cloud_polling",
