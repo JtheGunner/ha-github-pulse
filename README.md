@@ -86,9 +86,20 @@ History depth (1 to 10 years, default 3), refresh intervals, contribution time z
 
 ---
 
+## 🧩 Blueprints
+
+Two automation blueprints ship in [`blueprints/automation/github_pulse`](blueprints/automation/github_pulse). Copy them to `config/blueprints/automation/github_pulse/` and create automations from them.
+
+| | Blueprint | Fires on |
+|---|---|---|
+| 🔴 | `ci_failed.yaml` | `github_pulse_workflow_failed`, optionally filtered by repository and branch |
+| 👀 | `review_requested.yaml` | `github_pulse_review_requested`, optionally filtered by repository |
+
+---
+
 ## 🗺️ Roadmap
 
-Planned next: workflow run tracking, Home Assistant events and event entities, your own GraphQL queries as sensors, year in review. See [`docs/concept-and-plan.md`](docs/concept-and-plan.md).
+Planned next: your own GraphQL queries as sensors, year in review. See [`docs/concept-and-plan.md`](docs/concept-and-plan.md).
 
 ---
 
