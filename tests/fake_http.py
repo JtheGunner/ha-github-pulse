@@ -80,6 +80,10 @@ CONTRIBUTION_TOTALS = {
 
 def _contribution_response(query: str) -> FakeResponse:
     """Answer a contribution query once the script is exhausted."""
+    if "commitContributionsByRepository" in query:
+        aliases = re.findall(r"(\w+): contributionsCollection", query)
+        user = {a: {"commitContributionsByRepository": []} for a in aliases}
+        return FakeResponse(body={"data": {"user": user}})
     if "contributionCalendar" in query:
         calendar = {"contributionCalendar": {"weeks": []}}
         return FakeResponse(

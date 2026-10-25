@@ -11,6 +11,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
 from .analytics.history import MonthKey, MonthStats
+from .analytics.languages import LanguageMonth
 from .analytics.periods import (
     like_for_like_previous_month,
     like_for_like_previous_year,
@@ -19,13 +20,17 @@ from .analytics.periods import (
 from .coordinator import GitHubPulseCoordinator, GroupFetcher
 from .history_fetch import fetch_daily, fetch_ranges
 from .history_store import HistoryStore
+from .language_store import LanguageStore
 from .models import GitHubPulseConfigEntry
 from .settings import Settings
 
 GROUP_CURRENT = "current"
 GROUP_HISTORY = "history"
 GROUP_CALENDAR = "calendar"
-PROFILE_GROUPS = frozenset({GROUP_CURRENT, GROUP_HISTORY, GROUP_CALENDAR})
+GROUP_LANGUAGES = "languages"
+PROFILE_GROUPS = frozenset(
+    {GROUP_CURRENT, GROUP_HISTORY, GROUP_CALENDAR, GROUP_LANGUAGES}
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,15 +53,18 @@ class ProfileCoordinator(GitHubPulseCoordinator):
         *,
         settings: Settings,
         history: HistoryStore,
+        languages: LanguageStore,
         active_groups: Collection[str] = PROFILE_GROUPS,
     ) -> None:
         """Create the coordinator."""
         self._settings = settings
         self._history = history
+        self._languages = languages
         groups: dict[str, GroupFetcher] = {
             GROUP_CURRENT: self._fetch_current,
             GROUP_HISTORY: self._fetch_history,
             GROUP_CALENDAR: self._fetch_calendar,
+            GROUP_LANGUAGES: self._fetch_languages,
         }
         super().__init__(
             hass,
@@ -112,3 +120,13 @@ class ProfileCoordinator(GitHubPulseCoordinator):
             self.today(),
             self._settings.contribution_time_zone,
         )
+
+    async def _fetch_languages(self) -> dict[MonthKey, LanguageMonth]:
+        await self._languages.async_refresh(
+            self.client,
+            self.config_entry.runtime_data.login,
+            self._settings.contribution_time_zone,
+            today=self.today(),
+            years=self._settings.history_years,
+        )
+        return dict(self._languages.months)
