@@ -11,6 +11,7 @@ from .api import GitHubClient
 
 if TYPE_CHECKING:
     from .actions_coordinator import ActionsCoordinator
+    from .events import EventDispatcher
     from .profile_coordinator import ProfileCoordinator
     from .repository_coordinator import RepositoryCoordinator
 
@@ -25,6 +26,7 @@ class GitHubPulseData:
     profile: ProfileCoordinator | None = None
     repositories: RepositoryCoordinator | None = None
     actions: ActionsCoordinator | None = None
+    events: EventDispatcher | None = None
 
 
 type GitHubPulseConfigEntry = ConfigEntry[GitHubPulseData]

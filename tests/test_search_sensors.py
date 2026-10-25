@@ -47,7 +47,7 @@ def _client(totals: list[int], budget: RateBudget | None = None) -> Any:
 
 
 async def test_counts_come_from_two_searches() -> None:
-    client = _client([3, 5])
+    client = _client([3, 5, 0])
 
     counts = await fetch_search_counts(client, "octocat")
 
@@ -55,11 +55,11 @@ async def test_counts_come_from_two_searches() -> None:
     queries = [call.args[1]["q"] for call in client.rest_get.await_args_list]
     assert "review-requested:octocat" in queries[0]
     assert "author:octocat" in queries[1]
-    assert all("is:pr is:open" in q for q in queries)
+    assert "is:merged" in queries[2]
 
 
 async def test_empty_results_count_as_zero() -> None:
-    counts = await fetch_search_counts(_client([0, 0]), "octocat")
+    counts = await fetch_search_counts(_client([0, 0, 0]), "octocat")
 
     assert (counts.review_requested, counts.authored_open) == (0, 0)
 
@@ -80,7 +80,7 @@ async def test_a_spent_core_budget_does_not_block_search() -> None:
     budget = RateBudget()
     budget.update_from_headers({**SEARCH_HEADERS, "X-RateLimit-Resource": "core"})
 
-    counts = await fetch_search_counts(_client([1, 2], budget), "octocat")
+    counts = await fetch_search_counts(_client([1, 2, 0], budget), "octocat")
 
     assert counts.review_requested == 1
 

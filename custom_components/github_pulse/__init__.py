@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Coroutine
+from functools import partial
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
@@ -20,6 +21,8 @@ from .actions_coordinator import (
 )
 from .api import GitHubClient
 from .const import CONF_MODULES, CONF_OWNER, DOMAIN, MODULE_PROFILE, MODULE_REPOSITORIES
+from .coordinator import GitHubPulseCoordinator
+from .events import EventDispatcher
 from .groups import GroupedEntity, active_groups
 from .history_store import HistoryStore
 from .language_store import LanguageStore
@@ -35,7 +38,7 @@ from .sensor_repository import REPOSITORY_SENSORS
 from .services import async_setup_services
 from .settings import Settings
 
-PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.BINARY_SENSOR]
+PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.BINARY_SENSOR, Platform.EVENT]
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -89,6 +92,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: GitHubPulseConfigEntry) 
         )
         await actions.async_config_entry_first_refresh()
         entry.runtime_data.actions = actions
+    await _async_setup_events(hass, entry)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(_async_reload_on_change(entry)))
     return True
@@ -198,3 +202,36 @@ def _actions_groups(
             enabled,
         )
     return frozenset(needed)
+
+
+async def _async_setup_events(
+    hass: HomeAssistant, entry: GitHubPulseConfigEntry
+) -> None:
+    """Create the dispatcher and subscribe it to every coordinator that feeds it.
+
+    The current data is processed once first: on a fresh install this only
+    initialises the stored state, so existing history is not announced.
+    """
+    data = entry.runtime_data
+    dispatcher = EventDispatcher(hass, entry.entry_id)
+    await dispatcher.async_load()
+    data.events = dispatcher
+    for coordinator, handler in (
+        (data.actions, dispatcher.handle_runs),
+        (data.repositories, dispatcher.handle_repositories),
+        (data.profile, dispatcher.handle_search),
+    ):
+        if coordinator is None:
+            continue
+        handler(coordinator.data)
+        entry.async_on_unload(
+            coordinator.async_add_listener(partial(_forward, coordinator, handler))
+        )
+
+
+def _forward(
+    coordinator: GitHubPulseCoordinator,
+    handler: Callable[[dict[str, Any]], None],
+) -> None:
+    """Pass fresh coordinator data to a dispatcher handler."""
+    handler(coordinator.data)
