@@ -25,8 +25,10 @@ from .profile_coordinator import (
     GROUP_CURRENT,
     GROUP_HISTORY,
     GROUP_LANGUAGES,
+    GROUP_SEARCH,
     CurrentPeriods,
 )
+from .search_fetch import SearchCounts
 from .settings import Settings
 
 type Attributes = Mapping[str, Any]
@@ -54,6 +56,11 @@ class ProfileView:
     def languages(self) -> Mapping[MonthKey, LanguageMonth]:
         """Return the monthly language estimate group."""
         return self.data[GROUP_LANGUAGES]  # type: ignore[no-any-return]
+
+    @property
+    def search(self) -> SearchCounts:
+        """Return the search-API counts group."""
+        return self.data[GROUP_SEARCH]  # type: ignore[no-any-return]
 
     @property
     def daily(self) -> Mapping[date, int]:
@@ -313,5 +320,21 @@ PROFILE_SENSORS: tuple[ProfileSensorDescription, ...] = (
         entity_registry_enabled_default=False,
         value_fn=_top_gainer,
         attributes_fn=_language_shift_attributes,
+    ),
+    ProfileSensorDescription(
+        key="review_requests",
+        translation_key="review_requests",
+        group=GROUP_SEARCH,
+        entity_registry_enabled_default=False,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda view: view.search.review_requested,
+    ),
+    ProfileSensorDescription(
+        key="authored_open_pull_requests",
+        translation_key="authored_open_pull_requests",
+        group=GROUP_SEARCH,
+        entity_registry_enabled_default=False,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda view: view.search.authored_open,
     ),
 )
