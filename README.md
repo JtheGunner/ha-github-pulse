@@ -10,7 +10,7 @@
 [![Python](https://img.shields.io/badge/python-3.14-3776ab?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![Home Assistant](https://img.shields.io/badge/home%20assistant-2026.9%2B-0ea5e9?style=flat-square&logo=homeassistant&logoColor=white)](https://www.home-assistant.io/)
 [![HACS](https://img.shields.io/badge/HACS-custom-8b5cf6?style=flat-square)](https://hacs.xyz/)
-[![Status](https://img.shields.io/badge/status-in%20development-f59e0b?style=flat-square)](#-status)
+[![Status](https://img.shields.io/badge/status-beta-f59e0b?style=flat-square)](CHANGELOG.md)
 
 </div>
 
@@ -30,20 +30,50 @@ You choose which parts to enable. That also decides which access token permissio
 
 ---
 
-## 🚧 Status
+## 📥 Installation
 
-The integration is under development and not yet installable. See [`docs/concept-and-plan.md`](docs/concept-and-plan.md) for the design and roadmap.
+1. In HACS, open the menu → **Custom repositories**, add `https://github.com/JtheGunner/ha-github-pulse` as an **Integration**.
+2. Install **GitHub Pulse** and restart Home Assistant.
+3. Go to **Settings → Devices & services → Add integration → GitHub Pulse**.
+4. Paste a personal access token and choose the modules you want.
+
+Requires Home Assistant 2026.9 or newer.
 
 ---
 
-## 🧩 Design at a glance
+## 🔑 Access token
 
-| | Part | Purpose |
+| Module | Classic token | Fine-grained token |
 | --- | --- | --- |
-| 👤 | Profile | Account-wide activity and history |
-| 📁 | Repositories | Per-repository stats and CI state |
-| ⚙️ | Actions | Workflow runs and failure rates |
-| 🔧 | Custom queries | Your own read-only GraphQL queries |
+| 👤 Profile | no scope for public activity; `repo` + `read:org` adds private repositories | Metadata read, one owner only |
+| 📁 Repositories | `repo` for private repositories | Metadata, Contents, Issues, Pull requests (read); Actions read if you track workflow runs |
+
+The setup checks the token against every module you select and tells you what is missing. The full endpoint list is in the [permission matrix](docs/permission-matrix.md).
+
+> [!IMPORTANT]
+> Fine-grained tokens belong to a single owner and cannot read Packages. Use a classic token if you need more.
+
+---
+
+## 🧩 What you get
+
+| | Part | Entities |
+| --- | --- | --- |
+| 👤 | Profile | Contributions, commits and pull requests this month; change versus last month and last year (like for like); busiest month; current and longest streak; top language and language shift (estimated) |
+| 📁 | Repositories | One device per repository: stars, forks, open issues and pull requests, latest release, CI state of the default branch |
+| 🔔 | Optional sensors | Reviews, issues, active days, strongest weekday, watchers, release downloads, days since last commit or release, pull requests awaiting your review |
+
+Everything marked optional is created disabled. GitHub Pulse only fetches data that an enabled entity needs, so unused sensors cost no API calls.
+
+### 🛎️ Services
+
+| Service | Purpose |
+| --- | --- |
+| `github_pulse.get_history` | Returns the monthly series and language shares as a response, for scripts and templates |
+
+### 🔧 Options
+
+History depth (1 to 10 years, default 3), refresh intervals, contribution time zone, whether to include restricted contributions, language weighting, and an opt-in import of the monthly history into long-term statistics.
 
 > [!TIP]
 > Charts for commits and language shares need no custom card: see the [dashboard example](docs/dashboard-example.md).
@@ -56,6 +86,16 @@ The integration is under development and not yet installable. See [`docs/concept
 
 ---
 
+## 🗺️ Roadmap
+
+Planned next: workflow run tracking, Home Assistant events and event entities, your own GraphQL queries as sensors, year in review. See [`docs/concept-and-plan.md`](docs/concept-and-plan.md).
+
+---
+
+## 🤝 Contributing
+
+Issues and pull requests are welcome. Run the checks below before opening a pull request; every behaviour change needs a test.
+
 ## 🛠️ Development
 
 Requires Python 3.14 and [`uv`](https://docs.astral.sh/uv/).
@@ -67,6 +107,12 @@ uv pip install --python .venv/bin/python -r requirements_test.txt
 .venv/bin/mypy custom_components
 .venv/bin/pytest
 ```
+
+---
+
+## 📜 Changelog
+
+See [`CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
