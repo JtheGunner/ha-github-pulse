@@ -20,7 +20,11 @@ from custom_components.github_pulse.const import (
     CONF_TOKEN_TYPE,
     DOMAIN,
 )
-from custom_components.github_pulse.statistics_import import build_series, slug
+from custom_components.github_pulse.statistics_import import (
+    build_series,
+    import_series,
+    slug,
+)
 from freezegun.api import FrozenDateTimeFactory
 from homeassistant.components.recorder import Recorder
 from homeassistant.components.recorder.statistics import (
@@ -174,3 +178,18 @@ async def test_nothing_is_imported_by_default(
         list_statistic_ids, hass, None, None
     )
     assert not [i for i in ids if i["statistic_id"].startswith("github_pulse:")]
+
+
+async def test_a_missing_recorder_is_skipped_with_a_warning(
+    hass: HomeAssistant, caplog: pytest.LogCaptureFixture
+) -> None:
+    hass.config.components.remove("recorder")
+
+    import_series(
+        hass,
+        build_series(
+            "o", HISTORY, {}, zone=ZONE, include_restricted=True, by_commits=True
+        ),
+    )
+
+    assert "recorder is not loaded" in caplog.text

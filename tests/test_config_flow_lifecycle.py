@@ -7,6 +7,7 @@ from collections.abc import Callable
 from custom_components.github_pulse.const import (
     CONF_CONTRIBUTION_TIME_ZONE,
     CONF_HISTORY_YEARS,
+    CONF_IMPORT_STATISTICS,
     CONF_INCLUDE_RESTRICTED,
     CONF_LANGUAGE_WEIGHTING,
     CONF_MODULES,
@@ -150,6 +151,7 @@ VALID_OPTIONS = {
     CONF_CONTRIBUTION_TIME_ZONE: "Europe/Zurich",
     CONF_INCLUDE_RESTRICTED: False,
     CONF_LANGUAGE_WEIGHTING: "repo_count",
+    CONF_IMPORT_STATISTICS: True,
 }
 
 

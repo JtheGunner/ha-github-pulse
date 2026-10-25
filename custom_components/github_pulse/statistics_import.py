@@ -22,7 +22,7 @@ from homeassistant.core import HomeAssistant
 
 from .analytics.history import MonthKey, MonthStats
 from .analytics.languages import LanguageMonth, shares
-from .const import DOMAIN
+from .const import DOMAIN, LOGGER
 
 LANGUAGE_TOP = 8
 _SYMBOLS = {"+": "plus", "#": "sharp"}
@@ -159,7 +159,10 @@ def _language_series(
 
 
 def import_series(hass: HomeAssistant, series: list[StatisticSeries]) -> None:
-    """Write the series to the recorder."""
+    """Write the series to the recorder, or skip when it is not running."""
+    if "recorder" not in hass.config.components:
+        LOGGER.warning("Statistics import is enabled but the recorder is not loaded")
+        return
     for item in series:
         if item.points:
             async_add_external_statistics(hass, item.metadata, item.points)
