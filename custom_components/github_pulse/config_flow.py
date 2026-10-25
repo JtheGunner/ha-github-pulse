@@ -62,6 +62,9 @@ from .const import (
 from .settings import is_valid_time_zone
 
 TOKENS_URL = "https://github.com/settings/tokens"
+DOCS_URL = (
+    "https://github.com/JtheGunner/ha-github-pulse/blob/main/docs/contributions.md"
+)
 
 _TOKEN_SELECTOR = TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))
 _MODULES_SELECTOR = SelectSelector(
@@ -208,7 +211,7 @@ class GitHubPulseConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Ask for a token and the modules to enable, then verify both."""
         errors: dict[str, str] = {}
-        placeholders = {"tokens_url": TOKENS_URL}
+        placeholders = {"tokens_url": TOKENS_URL, "docs_url": DOCS_URL}
 
         if user_input is not None:
             token = user_input[CONF_ACCESS_TOKEN].strip()
