@@ -1,0 +1,55 @@
+blueprint:
+  name: GitHub Pulse - run actions when a workflow fails
+  description: >-
+    Runs your actions when a GitHub Actions workflow fails. The actions can use
+    the variables `repository`, `workflow`, `branch`, `run_id`, `conclusion` and
+    `url`. Needs Actions tracking enabled for the repository in GitHub Pulse.
+  domain: automation
+  author: GitHub Pulse
+  input:
+    repository:
+      name: Repository
+      description: Only react to this repository (owner/name). Leave empty for all tracked repositories.
+      default: ""
+      selector:
+        text:
+    branch:
+      name: Branch
+      description: Only react to runs on this branch. Leave empty for every branch.
+      default: ""
+      selector:
+        text:
+    notify_actions:
+      name: Actions
+      description: What to do, for example send a notification or turn a light red.
+      selector:
+        action:
+
+mode: queued
+max_exceeded: silent
+
+trigger_variables:
+  repository_filter: !input repository
+  branch_filter: !input branch
+
+triggers:
+  - trigger: event
+    event_type: github_pulse_workflow_failed
+
+conditions:
+  - condition: template
+    value_template: >-
+      {{ repository_filter == '' or trigger.event.data.repository | lower == repository_filter | lower }}
+  - condition: template
+    value_template: >-
+      {{ branch_filter == '' or trigger.event.data.branch == branch_filter }}
+
+variables:
+  repository: "{{ trigger.event.data.repository }}"
+  workflow: "{{ trigger.event.data.workflow }}"
+  branch: "{{ trigger.event.data.branch }}"
+  run_id: "{{ trigger.event.data.run_id }}"
+  conclusion: "{{ trigger.event.data.conclusion }}"
+  url: "{{ trigger.event.data.url }}"
+
+actions: !input notify_actions

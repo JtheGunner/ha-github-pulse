@@ -1,0 +1,43 @@
+blueprint:
+  name: GitHub Pulse - run actions when a review is requested
+  description: >-
+    Runs your actions when someone asks you to review a pull request. The
+    actions can use the variables `repository`, `number`, `title` and `url`.
+    Needs the "Pull request activity" event entity enabled in GitHub Pulse.
+  domain: automation
+  author: GitHub Pulse
+  input:
+    repository:
+      name: Repository
+      description: Only react to this repository (owner/name). Leave empty for all repositories.
+      default: ""
+      selector:
+        text:
+    notify_actions:
+      name: Actions
+      description: What to do, for example announce it on a speaker.
+      selector:
+        action:
+
+mode: queued
+max_exceeded: silent
+
+trigger_variables:
+  repository_filter: !input repository
+
+triggers:
+  - trigger: event
+    event_type: github_pulse_review_requested
+
+conditions:
+  - condition: template
+    value_template: >-
+      {{ repository_filter == '' or trigger.event.data.repository | lower == repository_filter | lower }}
+
+variables:
+  repository: "{{ trigger.event.data.repository }}"
+  number: "{{ trigger.event.data.number }}"
+  title: "{{ trigger.event.data.title }}"
+  url: "{{ trigger.event.data.url }}"
+
+actions: !input notify_actions
