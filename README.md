@@ -62,7 +62,7 @@ The setup checks the token against every module you select and tells you what is
 | 👤 | Profile | Contributions, commits and pull requests this month; change versus last month and last year (like for like); busiest month; current and longest streak; top language and language shift (estimated) |
 | 📁 | Repositories | One device per repository: stars, forks, open issues and pull requests, latest release, CI state of the default branch |
 | 🧪 | Custom queries | Your own read-only GraphQL query as a sensor, added under **Add custom query**. Rendered with templates over `value_json`. Presets included; see the [guide](docs/custom-queries.md) |
-| 🔔 | Optional sensors | Reviews, issues, active days, strongest weekday, watchers, release downloads, days since last commit or release, pull requests awaiting your review, most active hour and night-owl score (approximate, from GitHub's last 300 events), average time to merge (last 50 merged pull requests), stale pull requests (open, untouched for 14 days) |
+| 🔔 | Optional sensors | Reviews, issues, active days, strongest weekday, watchers, release downloads, days since last commit or release, pull requests awaiting your review, most active hour and night-owl score (approximate, from GitHub's last 300 events), average time to merge (last 50 merged pull requests), stale pull requests (open, untouched for 14 days), year in review (one-line summary with the details as attributes) |
 
 Everything marked optional is created disabled. GitHub Pulse only fetches data that an enabled entity needs, so unused sensors cost no API calls.
 
@@ -71,6 +71,7 @@ Everything marked optional is created disabled. GitHub Pulse only fetches data t
 | Service | Purpose |
 | --- | --- |
 | `github_pulse.get_history` | Returns the monthly series and language shares as a response, for scripts and templates |
+| `github_pulse.year_in_review` | Returns contributions, busiest month, top language (estimated) and longest streak of a year, with a one-line summary |
 | `github_pulse.query` | Runs a read-only GraphQL query and returns its `data`, `errors` and `cost`. Same validation and rate budget as custom query sensors; 30 s timeout, 200 kB result limit |
 
 ### 🔧 Options
@@ -101,7 +102,7 @@ Two automation blueprints ship in [`blueprints/automation/github_pulse`](bluepri
 
 ## 🗺️ Roadmap
 
-Planned next: your own GraphQL queries as sensors, year in review. See [`docs/concept-and-plan.md`](docs/concept-and-plan.md).
+Planned next: German translation and a final hardening pass for 1.0. See [`docs/concept-and-plan.md`](docs/concept-and-plan.md).
 
 ---
 

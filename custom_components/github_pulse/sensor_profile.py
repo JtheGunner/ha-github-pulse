@@ -20,6 +20,7 @@ from .analytics.languages import LanguageMonth, combine, shares, shift
 from .analytics.patterns import busiest_month, streaks, weekday_pattern
 from .analytics.periods import percent_change
 from .analytics.rhythm import Rhythm
+from .analytics.year_review import YearInReview, summary, year_in_review
 from .const import WEIGHTING_COMMITS
 from .profile_coordinator import (
     GROUP_CALENDAR,
@@ -87,6 +88,7 @@ class ProfileSensorDescription(SensorEntityDescription):
     """A profile sensor with the data group and the readers for state and attributes."""
 
     group: str
+    also_needs: tuple[str, ...] = ()
     value_fn: Callable[[ProfileView], Any]
     attributes_fn: Callable[[ProfileView], Attributes] | None = None
 
@@ -103,6 +105,37 @@ def _contribution_attributes(view: ProfileView) -> Attributes:
         "visible": month.visible_total,
         "restricted": month.restricted,
         "includes_restricted": view.settings.include_restricted,
+    }
+
+
+def _year_review(view: ProfileView) -> YearInReview:
+    return year_in_review(
+        view.today.year,
+        view.history,
+        view.data.get(GROUP_LANGUAGES, {}),
+        view.data.get(GROUP_CALENDAR, {}),
+        include_restricted=view.settings.include_restricted,
+        by_commits=view.settings.language_weighting == WEIGHTING_COMMITS,
+    )
+
+
+def _year_review_attributes(view: ProfileView) -> Attributes:
+    review = _year_review(view)
+    best = review.busiest_month
+    return {
+        "year": review.year,
+        "contributions": review.contributions,
+        "commits": review.commits,
+        "pull_requests": review.pull_requests,
+        "reviews": review.reviews,
+        "issues": review.issues,
+        "active_months": review.active_months,
+        "busiest_month": None
+        if best is None
+        else MonthKey(review.year, best.month).label,
+        "top_language": review.top_language,
+        "longest_streak": review.longest_streak,
+        "language_method": "estimated",
     }
 
 
@@ -383,6 +416,15 @@ PROFILE_SENSORS: tuple[ProfileSensorDescription, ...] = (
         entity_registry_enabled_default=False,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda view: view.wip.stale_open,
+    ),
+    ProfileSensorDescription(
+        key="year_in_review",
+        translation_key="year_in_review",
+        group=GROUP_HISTORY,
+        also_needs=(GROUP_LANGUAGES, GROUP_CALENDAR),
+        entity_registry_enabled_default=False,
+        value_fn=lambda view: summary(_year_review(view)),
+        attributes_fn=_year_review_attributes,
     ),
     ProfileSensorDescription(
         key="language_shift",

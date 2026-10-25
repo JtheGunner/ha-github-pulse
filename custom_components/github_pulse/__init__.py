@@ -150,8 +150,9 @@ def _profile_groups(
 
     return active_groups(
         (
-            GroupedEntity(d.key, d.group, d.entity_registry_enabled_default)
+            GroupedEntity(d.key, group, d.entity_registry_enabled_default)
             for d in PROFILE_SENSORS
+            for group in (d.group, *d.also_needs)
         ),
         enabled,
     )
