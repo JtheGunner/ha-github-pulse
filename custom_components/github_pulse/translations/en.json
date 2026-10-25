@@ -133,6 +133,49 @@
       },
       "language_shift": {
         "name": "Language shift vs. last year"
+      },
+      "stars": {
+        "name": "Stars"
+      },
+      "forks": {
+        "name": "Forks"
+      },
+      "open_issues": {
+        "name": "Open issues"
+      },
+      "open_pull_requests": {
+        "name": "Open pull requests"
+      },
+      "latest_release": {
+        "name": "Latest release"
+      },
+      "ci_state": {
+        "name": "CI state",
+        "state": {
+          "success": "Passing",
+          "failure": "Failing",
+          "pending": "Running",
+          "error": "Error",
+          "expected": "Expected"
+        }
+      },
+      "watchers": {
+        "name": "Watchers"
+      },
+      "latest_release_downloads": {
+        "name": "Latest release downloads"
+      },
+      "total_downloads": {
+        "name": "Total release downloads"
+      },
+      "days_since_last_commit": {
+        "name": "Days since last commit"
+      },
+      "days_since_last_release": {
+        "name": "Days since last release"
+      },
+      "last_push": {
+        "name": "Last push"
       }
     }
   },

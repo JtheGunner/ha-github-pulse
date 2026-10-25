@@ -21,11 +21,11 @@ from .language_store import LanguageStore
 from .models import GitHubPulseConfigEntry, GitHubPulseData
 from .profile_coordinator import ProfileCoordinator
 from .repository_coordinator import (
-    GROUP_OVERVIEW,
     RepositoryCoordinator,
     tracked_repositories,
 )
 from .sensor_profile import PROFILE_SENSORS
+from .sensor_repository import REPOSITORY_SENSORS
 from .services import async_setup_services
 from .settings import Settings
 
@@ -71,7 +71,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: GitHubPulseConfigEntry) 
             hass,
             entry,
             settings=Settings.from_options(entry.options),
-            active_groups={GROUP_OVERVIEW},
+            active_groups=_repository_groups(hass, entry),
         )
         await repositories.async_config_entry_first_refresh()
         entry.runtime_data.repositories = repositories
@@ -132,3 +132,28 @@ def _profile_groups(
         ),
         enabled,
     )
+
+
+def _repository_groups(
+    hass: HomeAssistant, entry: GitHubPulseConfigEntry
+) -> frozenset[str]:
+    """Return the repository data groups needed by the enabled sensors."""
+    registry = er.async_get(hass)
+    needed: set[str] = set()
+    for full_name in tracked_repositories(entry):
+
+        def enabled(key: str, full_name: str = full_name) -> bool | None:
+            unique_id = f"{entry.entry_id}_{full_name.lower()}_{key}"
+            entity_id = registry.async_get_entity_id(Platform.SENSOR, DOMAIN, unique_id)
+            if entity_id is None or (found := registry.async_get(entity_id)) is None:
+                return None
+            return not found.disabled
+
+        needed |= active_groups(
+            (
+                GroupedEntity(d.key, d.group, d.entity_registry_enabled_default)
+                for d in REPOSITORY_SENSORS
+            ),
+            enabled,
+        )
+    return frozenset(needed)
