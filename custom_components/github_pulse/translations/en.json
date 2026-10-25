@@ -221,6 +221,12 @@
       },
       "actions_average_duration": {
         "name": "Average workflow duration"
+      },
+      "most_active_hour": {
+        "name": "Most active hour (approx.)"
+      },
+      "night_owl_score": {
+        "name": "Night owl score (approx.)"
       }
     },
     "binary_sensor": {
