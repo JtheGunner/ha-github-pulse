@@ -251,7 +251,9 @@ async def test_reconfigure_validates_again_and_updates(
         unique_id="repository count",
         data=_input(),
     )
-    entry, _ = await _setup(hass, patch_session, COST, RESULT, subentries=[existing])
+    entry, _ = await _setup(
+        hass, patch_session, RESULT, COST, RESULT, subentries=[existing]
+    )
     subentry_id = next(iter(entry.subentries))
 
     result = await hass.config_entries.subentries.async_init(
