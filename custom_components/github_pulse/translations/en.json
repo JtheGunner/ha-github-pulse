@@ -135,5 +135,46 @@
         "name": "Language shift vs. last year"
       }
     }
+  },
+  "services": {
+    "get_history": {
+      "name": "Get history",
+      "description": "Returns the stored monthly contribution series and, optionally, the estimated language shares per month.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "The GitHub Pulse account. Optional when only one is set up."
+        },
+        "start": {
+          "name": "From month",
+          "description": "First month to include, as YYYY-MM."
+        },
+        "end": {
+          "name": "To month",
+          "description": "Last month to include, as YYYY-MM."
+        },
+        "include_languages": {
+          "name": "Include languages",
+          "description": "Add the estimated language shares per month."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "no_entry": {
+      "message": "No loaded GitHub Pulse account was found."
+    },
+    "entry_required": {
+      "message": "More than one GitHub Pulse account is set up. Choose one with config_entry_id."
+    },
+    "profile_disabled": {
+      "message": "The Profile module is not enabled for this account."
+    },
+    "invalid_month": {
+      "message": "{field} must be a month in the form YYYY-MM, got {value}."
+    },
+    "range_reversed": {
+      "message": "The start month must not be after the end month."
+    }
   }
 }

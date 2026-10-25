@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from homeassistant.const import CONF_ACCESS_TOKEN, Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.typing import ConfigType
 
 from .api import GitHubClient
 from .const import CONF_MODULES, CONF_OWNER, DOMAIN, MODULE_PROFILE
@@ -15,9 +17,18 @@ from .language_store import LanguageStore
 from .models import GitHubPulseConfigEntry, GitHubPulseData
 from .profile_coordinator import ProfileCoordinator
 from .sensor_profile import PROFILE_SENSORS
+from .services import async_setup_services
 from .settings import Settings
 
 PLATFORMS: list[Platform] = [Platform.SENSOR]
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Register the integration's services."""
+    async_setup_services(hass)
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: GitHubPulseConfigEntry) -> bool:

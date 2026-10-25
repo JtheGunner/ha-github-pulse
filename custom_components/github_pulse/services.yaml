@@ -1,0 +1,22 @@
+get_history:
+  fields:
+    config_entry_id:
+      required: false
+      selector:
+        config_entry:
+          integration: github_pulse
+    start:
+      required: false
+      example: "2025-01"
+      selector:
+        text:
+    end:
+      required: false
+      example: "2026-10"
+      selector:
+        text:
+    include_languages:
+      required: false
+      default: true
+      selector:
+        boolean:
