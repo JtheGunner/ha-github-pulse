@@ -13,7 +13,7 @@
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/JtheGunner/ha-github-pulse/issues",
   "requirements": [
-    "graphql-core==3.3.1"
+    "graphql-core==3.2.6"
   ],
   "version": "0.1.0"
 }
