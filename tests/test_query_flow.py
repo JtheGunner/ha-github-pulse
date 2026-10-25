@@ -81,6 +81,11 @@ async def _submit(
     result = await hass.config_entries.subentries.async_init(
         (entry.entry_id, SUBENTRY_QUERY), context={"source": "user"}
     )
+    assert result["step_id"] == "user"
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"], {"preset": "custom"}
+    )
+    assert result["step_id"] == "details"
     return await hass.config_entries.subentries.async_configure(
         result["flow_id"], _input(**overrides)
     )
@@ -285,3 +290,24 @@ async def test_a_query_subentry_does_not_disturb_the_repository_platforms(
     entry, _ = await _setup(hass, patch_session, subentries=[existing])
 
     assert entry.state.value == "loaded"
+
+
+async def test_a_preset_prefills_the_details_form(
+    hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
+) -> None:
+    entry, _ = await _setup(hass, patch_session)
+    result = await hass.config_entries.subentries.async_init(
+        (entry.entry_id, SUBENTRY_QUERY), context={"source": "user"}
+    )
+
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"], {"preset": "followers"}
+    )
+
+    assert result["step_id"] == "details"
+    defaults = {
+        str(key): key.default() for key in result["data_schema"].schema if key.default
+    }
+    assert defaults[CONF_QUERY_NAME] == "Followers"
+    assert "followers" in defaults[CONF_QUERY]
+    assert defaults[CONF_UNIT] == "followers"

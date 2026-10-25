@@ -8,6 +8,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 - Automation blueprints for failed workflow runs and review requests.
 - Custom queries: add your own read-only GraphQL query as a sensor. Queries are validated (single `query`, cost cap, minimum interval), test-run before saving, and rendered with templates over `value_json`.
+- Preset queries as starting points for custom queries.
 - Service `github_pulse.query` to run a read-only GraphQL query and get the result as a response.
 
 ## [0.1.0] - 2026-10-25
