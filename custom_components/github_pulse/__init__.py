@@ -14,12 +14,17 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.typing import ConfigType
 
 from .api import GitHubClient
-from .const import CONF_MODULES, CONF_OWNER, DOMAIN, MODULE_PROFILE
+from .const import CONF_MODULES, CONF_OWNER, DOMAIN, MODULE_PROFILE, MODULE_REPOSITORIES
 from .groups import GroupedEntity, active_groups
 from .history_store import HistoryStore
 from .language_store import LanguageStore
 from .models import GitHubPulseConfigEntry, GitHubPulseData
 from .profile_coordinator import ProfileCoordinator
+from .repository_coordinator import (
+    GROUP_OVERVIEW,
+    RepositoryCoordinator,
+    tracked_repositories,
+)
 from .sensor_profile import PROFILE_SENSORS
 from .services import async_setup_services
 from .settings import Settings
@@ -59,6 +64,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: GitHubPulseConfigEntry) 
         )
         await profile.async_config_entry_first_refresh()
         entry.runtime_data.profile = profile
+    if MODULE_REPOSITORIES in entry.runtime_data.modules and tracked_repositories(
+        entry
+    ):
+        repositories = RepositoryCoordinator(
+            hass,
+            entry,
+            settings=Settings.from_options(entry.options),
+            active_groups={GROUP_OVERVIEW},
+        )
+        await repositories.async_config_entry_first_refresh()
+        entry.runtime_data.repositories = repositories
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(_async_reload_on_change(entry)))
     return True
