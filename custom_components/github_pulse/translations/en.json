@@ -227,6 +227,12 @@
       },
       "night_owl_score": {
         "name": "Night owl score (approx.)"
+      },
+      "average_time_to_merge": {
+        "name": "Average time to merge"
+      },
+      "stale_pull_requests": {
+        "name": "Stale pull requests"
       }
     },
     "binary_sensor": {

@@ -28,10 +28,12 @@ from .profile_coordinator import (
     GROUP_LANGUAGES,
     GROUP_RHYTHM,
     GROUP_SEARCH,
+    GROUP_WIP,
     CurrentPeriods,
 )
 from .search_fetch import SearchCounts
 from .settings import Settings
+from .wip_fetch import WipStats
 
 type Attributes = Mapping[str, Any]
 
@@ -63,6 +65,11 @@ class ProfileView:
     def search(self) -> SearchCounts:
         """Return the search-API counts group."""
         return self.data[GROUP_SEARCH]  # type: ignore[no-any-return]
+
+    @property
+    def wip(self) -> WipStats:
+        """Return the work-in-progress group."""
+        return self.data[GROUP_WIP]  # type: ignore[no-any-return]
 
     @property
     def rhythm(self) -> Rhythm:
@@ -97,6 +104,11 @@ def _contribution_attributes(view: ProfileView) -> Attributes:
         "restricted": month.restricted,
         "includes_restricted": view.settings.include_restricted,
     }
+
+
+def _average_time_to_merge(view: ProfileView) -> float | None:
+    hours = view.wip.hours_to_merge
+    return None if hours is None else round(hours, 1)
 
 
 def _night_owl_score(view: ProfileView) -> float | None:
@@ -351,6 +363,26 @@ PROFILE_SENSORS: tuple[ProfileSensorDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=_night_owl_score,
         attributes_fn=_rhythm_attributes,
+    ),
+    ProfileSensorDescription(
+        key="average_time_to_merge",
+        translation_key="average_time_to_merge",
+        group=GROUP_WIP,
+        entity_registry_enabled_default=False,
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement=UnitOfTime.HOURS,
+        suggested_display_precision=1,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=_average_time_to_merge,
+        attributes_fn=lambda view: {"merged_pull_requests": view.wip.merged_sample},
+    ),
+    ProfileSensorDescription(
+        key="stale_pull_requests",
+        translation_key="stale_pull_requests",
+        group=GROUP_WIP,
+        entity_registry_enabled_default=False,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda view: view.wip.stale_open,
     ),
     ProfileSensorDescription(
         key="language_shift",

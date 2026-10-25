@@ -44,18 +44,23 @@ async def _search(
     return int(response.data["total_count"]), items
 
 
-async def fetch_search_counts(client: GitHubClient, login: str) -> SearchCounts:
-    """Count pull requests awaiting review and own open ones; list recent merges.
-
-    Raises ``GitHubRateLimitError`` without calling GitHub while the search
-    budget is nearly spent, so the caller keeps the last value.
-    """
+def ensure_search_budget(client: GitHubClient) -> None:
+    """Raise ``GitHubRateLimitError`` while the search budget is nearly spent."""
     if client.budget.is_low(SEARCH_RESOURCE):
         budget = client.budget.get(SEARCH_RESOURCE)
         raise GitHubRateLimitError(
             "search rate budget is low",
             reset_at=None if budget is None else budget.reset_at,
         )
+
+
+async def fetch_search_counts(client: GitHubClient, login: str) -> SearchCounts:
+    """Count pull requests awaiting review and own open ones; list recent merges.
+
+    Raises ``GitHubRateLimitError`` without calling GitHub while the search
+    budget is nearly spent, so the caller keeps the last value.
+    """
+    ensure_search_budget(client)
     review_total, review_pulls = await _search(
         client, f"is:pr is:open archived:false review-requested:{login}", PAGE_SIZE
     )
