@@ -1,0 +1,486 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "GitHub verbinden",
+        "description": "Erstelle unter {tokens_url} ein Personal Access Token und wähle, was erfasst werden soll.\n\n**Profil** funktioniert für öffentliche Aktivität mit jedem Token. Ein klassisches Token mit `repo` und `read:org` zeigt zusätzlich Beiträge in privaten Repositories; ein feingranulares Token sieht nur einen Besitzer und kann nicht auf Packages zugreifen. Warum manche Beiträge „eingeschränkt“ sind: {docs_url}.\n\n**Repositories** braucht Lesezugriff auf die Repositories, die du später hinzufügst (feingranular: Metadata, Contents, Issues, Pull requests und Actions).",
+        "data": {
+          "access_token": "Personal Access Token",
+          "modules": "Was möchtest du erfassen?"
+        },
+        "data_description": {
+          "access_token": "Das Token wird in Home Assistant gespeichert und nur an api.github.com gesendet."
+        }
+      },
+      "reauth_confirm": {
+        "title": "GitHub erneut authentifizieren",
+        "description": "GitHub hat das gespeicherte Token für **{owner}** abgelehnt. Erstelle unter {tokens_url} ein neues Token und gib es hier ein.",
+        "data": {
+          "access_token": "Personal Access Token"
+        }
+      },
+      "reconfigure": {
+        "title": "Erfasste Daten ändern",
+        "description": "Das gespeicherte Token wird für jedes gewählte Modul geprüft.",
+        "data": {
+          "modules": "Was möchtest du erfassen?"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "GitHub hat das Token abgelehnt. Prüfe, ob es gültig und nicht abgelaufen ist.",
+      "cannot_connect": "GitHub ist nicht erreichbar. Versuche es gleich noch einmal.",
+      "rate_limit": "Das Ratenlimit der GitHub-API ist aufgebraucht. Versuche es später erneut.",
+      "no_modules": "Wähle mindestens etwas zum Erfassen aus.",
+      "module_unavailable": "Dieses Token kann nicht bedienen: {modules}. Wähle es ab oder verwende ein Token mit mehr Rechten.",
+      "wrong_account": "Dieses Token gehört zu einem anderen GitHub-Konto. Verwende ein Token für {owner}."
+    },
+    "abort": {
+      "already_configured": "Dieses GitHub-Konto ist bereits eingerichtet.",
+      "reauth_successful": "Das neue Token wurde gespeichert.",
+      "reconfigure_successful": "Die erfassten Module wurden aktualisiert."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "GitHub-Pulse-Optionen",
+        "data": {
+          "profile_interval": "Aktualisierungsintervall Profil",
+          "repository_interval": "Aktualisierungsintervall Repositories",
+          "history_years": "Verlaufstiefe",
+          "contribution_time_zone": "Zeitzone der Beiträge",
+          "include_restricted": "Beiträge zu privaten Repositories einbeziehen, die ich nicht sehen kann",
+          "language_weighting": "Gewichtung der Sprachen",
+          "import_statistics": "Monatsverlauf als Statistik importieren"
+        },
+        "data_description": {
+          "history_years": "Wie viele Jahre Monatsverlauf für Vergleiche und Diagramme geladen werden.",
+          "contribution_time_zone": "GitHub zählt Beitragstage in Pacific Time (America/Los_Angeles), sofern dein GitHub-Profil keine andere Zeitzone festlegt. Gib den IANA-Namen dieser Zone ein.",
+          "include_restricted": "GitHub meldet diese nur als anonyme Zahl. Wenn aktiv, enthalten die Summen sie.",
+          "language_weighting": "Wie die geschätzte Sprachstatistik jedes Repository gewichtet.",
+          "import_statistics": "Schreibt monatliche Commits, Beiträge und Sprachanteile in die Langzeitstatistik, damit die Statistik-Diagramm-Karte sie zeichnen kann. Standardmäßig aus."
+        }
+      }
+    },
+    "error": {
+      "invalid_time_zone": "Das ist kein gültiger IANA-Zeitzonenname, zum Beispiel Europe/Zurich."
+    }
+  },
+  "selector": {
+    "modules": {
+      "options": {
+        "profile": "Profilaktivität (Beiträge, Pull Requests, Sprachen)",
+        "repositories": "Repositories (Kennzahlen, Releases, CI-Status)"
+      }
+    },
+    "language_weighting": {
+      "options": {
+        "commit_weighted": "Nach Commits (Sprachmix des Repository mal deine Commits)",
+        "repo_count": "Nach Repositories (jedes Repository zählt einmal)"
+      }
+    },
+    "query_preset": {
+      "options": {
+        "custom": "Eigene Abfrage schreiben",
+        "commits_this_month": "Commits diesen Monat",
+        "pull_requests_this_month": "Pull Requests diesen Monat",
+        "contributions_this_year": "Beiträge dieses Jahr",
+        "public_repositories": "Öffentliche Repositories",
+        "followers": "Follower"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "contributions_this_month": {
+        "name": "Beiträge diesen Monat"
+      },
+      "commits_this_month": {
+        "name": "Commits diesen Monat"
+      },
+      "pull_requests_this_month": {
+        "name": "Pull Requests diesen Monat"
+      },
+      "commits_vs_last_month": {
+        "name": "Commits im Vergleich zum Vormonat"
+      },
+      "commits_vs_last_year": {
+        "name": "Commits im Vergleich zum gleichen Monat des Vorjahres"
+      },
+      "busiest_month": {
+        "name": "Aktivster Monat dieses Jahr"
+      },
+      "current_streak": {
+        "name": "Aktuelle Serie"
+      },
+      "longest_streak": {
+        "name": "Längste Serie"
+      },
+      "reviews_this_month": {
+        "name": "Reviews diesen Monat"
+      },
+      "issues_this_month": {
+        "name": "Issues diesen Monat"
+      },
+      "active_days_this_month": {
+        "name": "Aktive Tage diesen Monat"
+      },
+      "most_productive_weekday": {
+        "name": "Produktivster Wochentag",
+        "state": {
+          "monday": "Montag",
+          "tuesday": "Dienstag",
+          "wednesday": "Mittwoch",
+          "thursday": "Donnerstag",
+          "friday": "Freitag",
+          "saturday": "Samstag",
+          "sunday": "Sonntag"
+        }
+      },
+      "top_language": {
+        "name": "Top-Sprache dieses Jahr"
+      },
+      "language_shift": {
+        "name": "Sprachverschiebung im Vergleich zum Vorjahr"
+      },
+      "stars": {
+        "name": "Sterne"
+      },
+      "forks": {
+        "name": "Forks"
+      },
+      "open_issues": {
+        "name": "Offene Issues"
+      },
+      "open_pull_requests": {
+        "name": "Offene Pull Requests"
+      },
+      "latest_release": {
+        "name": "Neuestes Release"
+      },
+      "ci_state": {
+        "name": "CI-Status",
+        "state": {
+          "success": "Erfolgreich",
+          "failure": "Fehlgeschlagen",
+          "pending": "Läuft",
+          "error": "Fehler",
+          "expected": "Erwartet"
+        }
+      },
+      "watchers": {
+        "name": "Beobachter"
+      },
+      "latest_release_downloads": {
+        "name": "Downloads des neuesten Releases"
+      },
+      "total_downloads": {
+        "name": "Downloads aller Releases"
+      },
+      "days_since_last_commit": {
+        "name": "Tage seit dem letzten Commit"
+      },
+      "days_since_last_release": {
+        "name": "Tage seit dem letzten Release"
+      },
+      "last_push": {
+        "name": "Letzter Push"
+      },
+      "review_requests": {
+        "name": "Pull Requests, die auf mein Review warten"
+      },
+      "authored_open_pull_requests": {
+        "name": "Meine offenen Pull Requests"
+      },
+      "actions_last_result": {
+        "name": "Letztes Workflow-Ergebnis",
+        "state": {
+          "success": "Erfolg",
+          "failure": "Fehlschlag",
+          "cancelled": "Abgebrochen",
+          "skipped": "Übersprungen",
+          "timed_out": "Zeitüberschreitung",
+          "neutral": "Neutral",
+          "action_required": "Aktion erforderlich",
+          "stale": "Veraltet",
+          "startup_failure": "Startfehler"
+        }
+      },
+      "actions_runs_today": {
+        "name": "Workflow-Läufe heute"
+      },
+      "actions_queued_runs": {
+        "name": "Wartende Workflow-Läufe"
+      },
+      "actions_failure_rate_7d": {
+        "name": "Workflow-Fehlerquote (7 Tage)"
+      },
+      "actions_failure_rate_30d": {
+        "name": "Workflow-Fehlerquote (30 Tage)"
+      },
+      "actions_average_duration": {
+        "name": "Durchschnittliche Workflow-Dauer"
+      },
+      "most_active_hour": {
+        "name": "Aktivste Stunde (ca.)"
+      },
+      "night_owl_score": {
+        "name": "Nachteulen-Wert (ca.)"
+      },
+      "average_time_to_merge": {
+        "name": "Durchschnittliche Zeit bis zum Merge"
+      },
+      "stale_pull_requests": {
+        "name": "Veraltete Pull Requests"
+      },
+      "year_in_review": {
+        "name": "Jahresrückblick"
+      }
+    },
+    "binary_sensor": {
+      "actions_running": {
+        "name": "Workflow läuft"
+      }
+    },
+    "event": {
+      "repository_events": {
+        "name": "Aktivität",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "workflow_failed": "Workflow fehlgeschlagen",
+              "workflow_recovered": "Workflow wieder erfolgreich",
+              "release_published": "Release veröffentlicht"
+            }
+          }
+        }
+      },
+      "account_events": {
+        "name": "Pull-Request-Aktivität",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "review_requested": "Review angefordert",
+              "pr_merged": "Pull Request gemergt"
+            }
+          }
+        }
+      }
+    }
+  },
+  "services": {
+    "get_history": {
+      "name": "Verlauf abrufen",
+      "description": "Liefert die gespeicherte monatliche Beitragsreihe und optional die geschätzten Sprachanteile pro Monat.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Das GitHub-Pulse-Konto. Optional, wenn nur eines eingerichtet ist."
+        },
+        "start": {
+          "name": "Ab Monat",
+          "description": "Erster Monat, als JJJJ-MM."
+        },
+        "end": {
+          "name": "Bis Monat",
+          "description": "Letzter Monat, als JJJJ-MM."
+        },
+        "include_languages": {
+          "name": "Sprachen einbeziehen",
+          "description": "Fügt die geschätzten Sprachanteile pro Monat hinzu."
+        }
+      }
+    },
+    "query": {
+      "name": "Abfrage ausführen",
+      "description": "Führt eine schreibgeschützte GraphQL-Abfrage mit deinem Token aus und liefert das Ergebnis. Die Abfrage wird wie ein Sensor mit eigener Abfrage geprüft und teilt sich das Ratenbudget.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Das GitHub-Pulse-Konto. Optional, wenn nur eines eingerichtet ist."
+        },
+        "query": {
+          "name": "Abfrage",
+          "description": "Eine einzelne GraphQL-Abfrage. Mutationen werden abgelehnt."
+        },
+        "variables": {
+          "name": "Variablen",
+          "description": "Werte für deklarierte Variablen. Besitzer- und Datums-Helfer werden eingesetzt, wenn die Abfrage sie deklariert."
+        }
+      }
+    },
+    "year_in_review": {
+      "name": "Jahresrückblick",
+      "description": "Liefert die wichtigsten Zahlen eines Kalenderjahres: Beiträge, aktivster Monat, Top-Sprache (geschätzt) und längste Serie.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Das GitHub-Pulse-Konto. Optional, wenn nur eines eingerichtet ist."
+        },
+        "year": {
+          "name": "Jahr",
+          "description": "Das Jahr, das zusammengefasst wird. Standard ist das aktuelle Jahr."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "no_entry": {
+      "message": "Es wurde kein geladenes GitHub-Pulse-Konto gefunden."
+    },
+    "entry_required": {
+      "message": "Es sind mehrere GitHub-Pulse-Konten eingerichtet. Wähle eines mit config_entry_id."
+    },
+    "profile_disabled": {
+      "message": "Das Profil-Modul ist für dieses Konto nicht aktiviert."
+    },
+    "invalid_month": {
+      "message": "{field} muss ein Monat der Form JJJJ-MM sein, erhalten: {value}."
+    },
+    "range_reversed": {
+      "message": "Der Startmonat darf nicht nach dem Endmonat liegen."
+    },
+    "query_invalid": {
+      "message": "Die Abfrage ist nicht verwendbar: {detail}"
+    },
+    "variables_invalid": {
+      "message": "Die Variablen sind ungültig: {detail}"
+    },
+    "query_too_expensive": {
+      "message": "Die Abfrage ist zu teuer: {detail}"
+    },
+    "response_too_large": {
+      "message": "Das Ergebnis ist zu groß: {detail}"
+    },
+    "query_timeout": {
+      "message": "Die Abfrage hat zu lange gedauert und wurde abgebrochen."
+    },
+    "query_failed": {
+      "message": "GitHub konnte die Abfrage nicht ausführen: {detail}"
+    },
+    "budget_low": {
+      "message": "Das GraphQL-Ratenbudget ist fast aufgebraucht. Versuche es nach dem Zurücksetzen erneut."
+    }
+  },
+  "config_subentries": {
+    "repository": {
+      "initiate_flow": {
+        "user": "Repository hinzufügen",
+        "reconfigure": "Erfasste Daten ändern"
+      },
+      "entry_type": "Repository",
+      "step": {
+        "user": {
+          "title": "Repository hinzufügen",
+          "description": "Gib das Repository als `besitzer/name` ein.",
+          "data": {
+            "repository": "Repository",
+            "actions": "Workflow-Läufe erfassen (GitHub Actions)"
+          },
+          "data_description": {
+            "actions": "Braucht Lesezugriff auf Actions. Fügt Sensoren für den letzten Lauf und die Fehlerquote hinzu."
+          }
+        },
+        "reconfigure": {
+          "title": "{repository} ändern",
+          "data": {
+            "actions": "Workflow-Läufe erfassen (GitHub Actions)"
+          }
+        }
+      },
+      "error": {
+        "invalid_name": "Gib das Repository als besitzer/name ein, zum Beispiel home-assistant/core.",
+        "not_found": "Repository nicht gefunden. Bei einem privaten Repository prüfe, ob das Token es sehen kann.",
+        "no_access": "Das Token darf dieses Repository nicht lesen.",
+        "actions_no_access": "Das Token kann Actions dieses Repository nicht lesen. Füge die Leseberechtigung für Actions hinzu oder schalte die Option aus.",
+        "invalid_auth": "GitHub hat das gespeicherte Token abgelehnt.",
+        "rate_limit": "Das GitHub-Ratenlimit ist aufgebraucht. Versuche es später erneut.",
+        "cannot_connect": "GitHub ist nicht erreichbar."
+      },
+      "abort": {
+        "already_configured": "Dieses Repository wird bereits erfasst.",
+        "module_disabled": "Aktiviere zuerst das Repositories-Modul für dieses Konto.",
+        "reconfigure_successful": "Das Repository wurde aktualisiert."
+      }
+    },
+    "query": {
+      "initiate_flow": {
+        "user": "Eigene Abfrage hinzufügen",
+        "reconfigure": "Eigene Abfrage ändern"
+      },
+      "entry_type": "Eigene Abfrage",
+      "step": {
+        "user": {
+          "title": "Eigene Abfrage hinzufügen",
+          "description": "Starte mit einer fertigen Abfrage oder schreibe eine eigene.",
+          "data": {
+            "preset": "Ausgangspunkt"
+          }
+        },
+        "reconfigure": {
+          "title": "Eigene Abfrage ändern",
+          "description": "Die Abfrage wird erneut geprüft und testweise ausgeführt. {detail}",
+          "data": {
+            "name": "Name",
+            "query": "GraphQL-Abfrage",
+            "variables": "Variablen (JSON-Objekt)",
+            "interval": "Aktualisierungsintervall",
+            "state_template": "Zustands-Template",
+            "attributes_template": "Attribute-Template",
+            "unit": "Maßeinheit",
+            "device_class": "Geräteklasse",
+            "state_class": "Zustandsklasse"
+          },
+          "data_description": {
+            "query": "Eine einzelne `query`. Mutationen werden abgelehnt. Die Variablen `$owner`, `$start_of_month`, `$end_of_month`, `$start_of_year` und `$one_year_ago` werden eingesetzt, wenn die Abfrage sie deklariert.",
+            "variables": "Werte für weitere deklarierte Variablen als JSON-Objekt, mit den Variablennamen als Schlüssel.",
+            "state_template": "Ein Template über `value_json`, das die `data` der Antwort enthält. Es muss einen einzelnen Wert ergeben.",
+            "attributes_template": "Optional. Ein Template über `value_json`, das ein Mapping ergeben muss."
+          }
+        },
+        "confirm": {
+          "title": "Testlauf von {query_name}",
+          "description": "Die Abfrage wurde erfolgreich ausgeführt. Rohergebnis:\n\n```json\n{raw}\n```\n\nBerechneter Zustand: **{state}**\n\nBestätige, um den Sensor zu speichern."
+        },
+        "details": {
+          "title": "Eigene Abfrage hinzufügen",
+          "description": "Führe eine eigene schreibgeschützte GraphQL-Abfrage aus und mache ihr Ergebnis zu einem Sensor. {detail}",
+          "data": {
+            "name": "Name",
+            "query": "GraphQL-Abfrage",
+            "variables": "Variablen (JSON-Objekt)",
+            "interval": "Aktualisierungsintervall",
+            "state_template": "Zustands-Template",
+            "attributes_template": "Attribute-Template",
+            "unit": "Maßeinheit",
+            "device_class": "Geräteklasse",
+            "state_class": "Zustandsklasse"
+          },
+          "data_description": {
+            "query": "Eine einzelne `query`. Mutationen werden abgelehnt. Die Variablen `$owner`, `$start_of_month`, `$end_of_month`, `$start_of_year` und `$one_year_ago` werden eingesetzt, wenn die Abfrage sie deklariert.",
+            "variables": "Werte für weitere deklarierte Variablen als JSON-Objekt, mit den Variablennamen als Schlüssel.",
+            "state_template": "Ein Template über `value_json`, das die `data` der Antwort enthält. Es muss einen einzelnen Wert ergeben.",
+            "attributes_template": "Optional. Ein Template über `value_json`, das ein Mapping ergeben muss."
+          }
+        }
+      },
+      "error": {
+        "invalid_query": "Die Abfrage ist nicht verwendbar: {detail}",
+        "invalid_variables": "Die Variablen sind ungültig: {detail}",
+        "too_expensive": "Die Abfrage ist zu teuer: {detail}",
+        "interval_too_short": "Diese Abfrage braucht ein Aktualisierungsintervall von mindestens {detail} Minuten.",
+        "template_error": "Ein Template ist fehlgeschlagen: {detail}",
+        "name_in_use": "Eine eigene Abfrage mit diesem Namen existiert bereits.",
+        "not_found": "GitHub konnte etwas, wonach die Abfrage fragt, nicht finden.",
+        "no_access": "Das Token darf diese Abfrage nicht ausführen.",
+        "invalid_auth": "GitHub hat das gespeicherte Token abgelehnt.",
+        "rate_limit": "Das GitHub-Ratenlimit ist aufgebraucht. Versuche es später erneut.",
+        "cannot_connect": "GitHub ist nicht erreichbar."
+      },
+      "abort": {
+        "reconfigure_successful": "Die eigene Abfrage wurde aktualisiert."
+      }
+    }
+  }
+}
