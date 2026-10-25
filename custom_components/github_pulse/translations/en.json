@@ -176,5 +176,47 @@
     "range_reversed": {
       "message": "The start month must not be after the end month."
     }
+  },
+  "config_subentries": {
+    "repository": {
+      "initiate_flow": {
+        "user": "Add repository",
+        "reconfigure": "Change tracked data"
+      },
+      "entry_type": "Repository",
+      "step": {
+        "user": {
+          "title": "Add a repository",
+          "description": "Enter the repository as `owner/name`.",
+          "data": {
+            "repository": "Repository",
+            "actions": "Track workflow runs (GitHub Actions)"
+          },
+          "data_description": {
+            "actions": "Needs read access to Actions. Adds sensors for the latest run and failure rate."
+          }
+        },
+        "reconfigure": {
+          "title": "Change {repository}",
+          "data": {
+            "actions": "Track workflow runs (GitHub Actions)"
+          }
+        }
+      },
+      "error": {
+        "invalid_name": "Enter the repository as owner/name, for example home-assistant/core.",
+        "not_found": "Repository not found. For a private repository, check that the token can see it.",
+        "no_access": "The token is not allowed to read this repository.",
+        "actions_no_access": "The token cannot read Actions for this repository. Add the Actions read permission or turn the option off.",
+        "invalid_auth": "GitHub rejected the stored token.",
+        "rate_limit": "The GitHub rate limit is used up. Try again later.",
+        "cannot_connect": "Could not reach GitHub."
+      },
+      "abort": {
+        "already_configured": "This repository is already tracked.",
+        "module_disabled": "Enable the Repositories module for this account first.",
+        "reconfigure_successful": "The repository was updated."
+      }
+    }
   }
 }

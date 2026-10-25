@@ -10,7 +10,8 @@ from homeassistant.config_entries import (
     ConfigEntry,
     ConfigFlow,
     ConfigFlowResult,
-    OptionsFlowWithReload,
+    ConfigSubentryFlow,
+    OptionsFlow,
 )
 from homeassistant.const import CONF_ACCESS_TOKEN
 from homeassistant.core import HomeAssistant, callback
@@ -59,8 +60,10 @@ from .const import (
     MIN_HISTORY_YEARS,
     MIN_INTERVAL,
     MODULES,
+    SUBENTRY_REPOSITORY,
     WEIGHTING_COMMITS,
 )
+from .repository_flow import RepositorySubentryFlow
 from .settings import is_valid_time_zone
 
 TOKENS_URL = "https://github.com/settings/tokens"
@@ -212,6 +215,14 @@ class GitHubPulseConfigFlow(ConfigFlow, domain=DOMAIN):
         """Return the options flow handler."""
         return GitHubPulseOptionsFlow()
 
+    @classmethod
+    @callback
+    def async_get_supported_subentry_types(
+        cls, config_entry: ConfigEntry
+    ) -> dict[str, type[ConfigSubentryFlow]]:
+        """Return the subentry types: one tracked repository each."""
+        return {SUBENTRY_REPOSITORY: RepositorySubentryFlow}
+
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -327,8 +338,8 @@ class GitHubPulseConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
 
-class GitHubPulseOptionsFlow(OptionsFlowWithReload):
-    """Handle the options of an entry; saving reloads the entry."""
+class GitHubPulseOptionsFlow(OptionsFlow):
+    """Handle the options of an entry; the entry reloads through its update listener."""
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None

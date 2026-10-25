@@ -26,6 +26,10 @@ CONF_CONTRIBUTION_TIME_ZONE: Final = "contribution_time_zone"
 CONF_INCLUDE_RESTRICTED: Final = "include_restricted"
 CONF_LANGUAGE_WEIGHTING: Final = "language_weighting"
 CONF_IMPORT_STATISTICS: Final = "import_statistics"
+CONF_REPOSITORY: Final = "repository"
+CONF_ACTIONS: Final = "actions"
+
+SUBENTRY_REPOSITORY: Final = "repository"
 
 WEIGHTING_COMMITS: Final = "commit_weighted"
 WEIGHTING_REPOSITORIES: Final = "repo_count"
