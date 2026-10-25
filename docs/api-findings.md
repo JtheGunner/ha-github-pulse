@@ -64,5 +64,5 @@ Recommendation: default weighting `commit-weighted`; keep `repo-count` as an alt
 
 ## P0-6 Decisions taken
 
-- **Minimum Home Assistant version: `2026.4.0`.** It is the first release without the deprecated `has_mean` statistics field, so a single code path with `mean_type` and `unit_class` works. CI tests against the latest release only.
+- **Minimum Home Assistant version: `2026.9.0`.** Two reasons: `has_mean` is gone from the statistics metadata (single code path with `mean_type` and `unit_class`), and HA replaced `voluptuous` with `probatio` as its validation library in 2026.9 and dropped `voluptuous` from its requirements, so integrations must import `probatio`. CI tests against the latest release only.
 - Contribution time zone is an option (see P0-2).
