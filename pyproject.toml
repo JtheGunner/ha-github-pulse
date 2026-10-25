@@ -17,6 +17,7 @@ select = [
 ignore = [
   "PLR2004", # magic values are fine in tests and thresholds
   "PLR0913", # coordinators and API helpers take many keyword arguments
+  "TID252",  # relative imports are the Home Assistant convention
 ]
 
 [tool.ruff.lint.per-file-ignores]
