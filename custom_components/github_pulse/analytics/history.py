@@ -45,6 +45,15 @@ class MonthStats:
     reviews: int
     restricted: int
 
+    @property
+    def visible_total(self) -> int:
+        """Return all contributions whose type and repository are visible."""
+        return self.commits + self.pull_requests + self.issues + self.reviews
+
+    def total(self, *, include_restricted: bool) -> int:
+        """Return the visible total, optionally plus the anonymous restricted count."""
+        return self.visible_total + (self.restricted if include_restricted else 0)
+
 
 def months_back(today: date, years: int) -> list[MonthKey]:
     """Return the months from ``years`` ago up to and including today's month.

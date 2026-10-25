@@ -7,8 +7,11 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import GitHubClient
-from .const import CONF_MODULES, CONF_OWNER
+from .const import CONF_MODULES, CONF_OWNER, MODULE_PROFILE
+from .history_store import HistoryStore
 from .models import GitHubPulseConfigEntry, GitHubPulseData
+from .profile_coordinator import ProfileCoordinator
+from .settings import Settings
 
 PLATFORMS: list[Platform] = []
 
@@ -22,6 +25,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: GitHubPulseConfigEntry) 
         login=entry.data[CONF_OWNER],
         modules=frozenset(entry.data[CONF_MODULES]),
     )
+    if MODULE_PROFILE in entry.runtime_data.modules:
+        history = HistoryStore(hass, entry.entry_id)
+        await history.async_load()
+        profile = ProfileCoordinator(
+            hass,
+            entry,
+            settings=Settings.from_options(entry.options),
+            history=history,
+        )
+        await profile.async_config_entry_first_refresh()
+        entry.runtime_data.profile = profile
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 

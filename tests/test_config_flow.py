@@ -79,7 +79,9 @@ async def test_only_selected_modules_are_probed(
     result = await _submit(hass, await _start(hass), modules=["profile"])
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert len(session.requests) == 2  # /user plus one probe
+    rest = [r.url for r in session.requests if r.method == "GET"]
+    assert rest == ["https://api.github.com/user"]  # no repository probe
+    assert session.requests[1].method == "POST"  # the profile probe
 
 
 async def test_invalid_token_is_reported(
