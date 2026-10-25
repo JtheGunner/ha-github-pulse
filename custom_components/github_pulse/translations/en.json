@@ -266,6 +266,24 @@
           "description": "Add the estimated language shares per month."
         }
       }
+    },
+    "query": {
+      "name": "Run query",
+      "description": "Runs a read-only GraphQL query with your token and returns the result. The query is checked like a custom query sensor and shares the rate budget.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "The GitHub Pulse account. Optional when only one is set up."
+        },
+        "query": {
+          "name": "Query",
+          "description": "A single GraphQL query. Mutations are rejected."
+        },
+        "variables": {
+          "name": "Variables",
+          "description": "Values for declared variables. The owner and date helpers are filled in when the query declares them."
+        }
+      }
     }
   },
   "exceptions": {
@@ -283,6 +301,27 @@
     },
     "range_reversed": {
       "message": "The start month must not be after the end month."
+    },
+    "query_invalid": {
+      "message": "The query cannot be used: {detail}"
+    },
+    "variables_invalid": {
+      "message": "The variables are not valid: {detail}"
+    },
+    "query_too_expensive": {
+      "message": "The query is too expensive: {detail}"
+    },
+    "response_too_large": {
+      "message": "The result is too large: {detail}"
+    },
+    "query_timeout": {
+      "message": "The query took too long and was cancelled."
+    },
+    "query_failed": {
+      "message": "GitHub could not run the query: {detail}"
+    },
+    "budget_low": {
+      "message": "The GraphQL rate budget is nearly used up. Try again after it resets."
     }
   },
   "config_subentries": {

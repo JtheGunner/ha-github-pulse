@@ -19,6 +19,7 @@ from .analytics.languages import shares
 from .const import DOMAIN, WEIGHTING_COMMITS
 from .models import GitHubPulseConfigEntry
 from .profile_coordinator import GROUP_HISTORY, GROUP_LANGUAGES
+from .query_service import async_setup_query_service
 
 SERVICE_GET_HISTORY = "get_history"
 ATTR_CONFIG_ENTRY_ID = "config_entry_id"
@@ -46,6 +47,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
         schema=GET_HISTORY_SCHEMA,
         supports_response=SupportsResponse.ONLY,
     )
+    async_setup_query_service(hass, _entry)
 
 
 def _entry(hass: HomeAssistant, entry_id: str | None) -> GitHubPulseConfigEntry:

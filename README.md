@@ -71,6 +71,7 @@ Everything marked optional is created disabled. GitHub Pulse only fetches data t
 | Service | Purpose |
 | --- | --- |
 | `github_pulse.get_history` | Returns the monthly series and language shares as a response, for scripts and templates |
+| `github_pulse.query` | Runs a read-only GraphQL query and returns its `data`, `errors` and `cost`. Same validation and rate budget as custom query sensors; 30 s timeout, 200 kB result limit |
 
 ### 🔧 Options
 
