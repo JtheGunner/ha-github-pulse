@@ -1,3 +1,4 @@
 pytest-homeassistant-custom-component
 ruff
 mypy
+graphql-core==3.2.6
