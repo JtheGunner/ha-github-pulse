@@ -19,6 +19,24 @@ CONF_OWNER: Final = "owner"
 CONF_MODULES: Final = "modules"
 CONF_TOKEN_TYPE: Final = "token_type"  # noqa: S105 - a config key, not a secret
 
+CONF_PROFILE_INTERVAL: Final = "profile_interval"
+CONF_REPOSITORY_INTERVAL: Final = "repository_interval"
+CONF_HISTORY_YEARS: Final = "history_years"
+CONF_CONTRIBUTION_TIME_ZONE: Final = "contribution_time_zone"
+CONF_INCLUDE_RESTRICTED: Final = "include_restricted"
+CONF_LANGUAGE_WEIGHTING: Final = "language_weighting"
+
+WEIGHTING_COMMITS: Final = "commit_weighted"
+WEIGHTING_REPOSITORIES: Final = "repo_count"
+LANGUAGE_WEIGHTINGS: Final = (WEIGHTING_COMMITS, WEIGHTING_REPOSITORIES)
+
+DEFAULT_PROFILE_INTERVAL: Final = 15  # minutes
+DEFAULT_REPOSITORY_INTERVAL: Final = 15  # minutes
+MIN_INTERVAL: Final = 5
+MAX_INTERVAL: Final = 1440
+MIN_HISTORY_YEARS: Final = 1
+MAX_HISTORY_YEARS: Final = 10
+
 MODULE_PROFILE: Final = "profile"
 MODULE_REPOSITORIES: Final = "repositories"
 MODULES: Final = (MODULE_PROFILE, MODULE_REPOSITORIES)
@@ -26,3 +44,4 @@ MODULES: Final = (MODULE_PROFILE, MODULE_REPOSITORIES)
 # GitHub buckets contribution days in Pacific Time unless a profile time zone is set.
 DEFAULT_CONTRIBUTION_TIME_ZONE: Final = "America/Los_Angeles"
 DEFAULT_HISTORY_YEARS: Final = 3
+DEFAULT_INCLUDE_RESTRICTED: Final = True

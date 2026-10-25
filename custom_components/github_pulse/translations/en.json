@@ -11,6 +11,20 @@
         "data_description": {
           "access_token": "The token is stored in Home Assistant and only sent to api.github.com."
         }
+      },
+      "reauth_confirm": {
+        "title": "Reauthenticate GitHub",
+        "description": "GitHub rejected the stored token for **{owner}**. Create a new token at {tokens_url} and enter it here.",
+        "data": {
+          "access_token": "Personal access token"
+        }
+      },
+      "reconfigure": {
+        "title": "Change what is tracked",
+        "description": "The stored token is checked against every module you select.",
+        "data": {
+          "modules": "What do you want to track?"
+        }
       }
     },
     "error": {
@@ -18,10 +32,37 @@
       "cannot_connect": "Could not reach GitHub. Try again in a moment.",
       "rate_limit": "The GitHub API rate limit is exhausted. Try again later.",
       "no_modules": "Select at least one thing to track.",
-      "module_unavailable": "This token cannot serve: {modules}. Deselect it or use a token with more access."
+      "module_unavailable": "This token cannot serve: {modules}. Deselect it or use a token with more access.",
+      "wrong_account": "This token belongs to a different GitHub account. Use a token for {owner}."
     },
     "abort": {
-      "already_configured": "This GitHub account is already configured."
+      "already_configured": "This GitHub account is already configured.",
+      "reauth_successful": "The new token was saved.",
+      "reconfigure_successful": "The tracked modules were updated."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "GitHub Pulse options",
+        "data": {
+          "profile_interval": "Profile refresh interval",
+          "repository_interval": "Repository refresh interval",
+          "history_years": "History depth",
+          "contribution_time_zone": "Contribution time zone",
+          "include_restricted": "Include contributions to private repositories I cannot see",
+          "language_weighting": "Language weighting"
+        },
+        "data_description": {
+          "history_years": "How many years of monthly history are loaded for comparisons and charts.",
+          "contribution_time_zone": "GitHub counts contribution days in Pacific Time (America/Los_Angeles) unless your GitHub profile sets another time zone. Enter that zone's IANA name.",
+          "include_restricted": "GitHub reports these only as an anonymous number. When on, totals include them.",
+          "language_weighting": "How the estimated language statistics weigh each repository."
+        }
+      }
+    },
+    "error": {
+      "invalid_time_zone": "This is not a valid IANA time zone name, for example Europe/Zurich."
     }
   },
   "selector": {
@@ -29,6 +70,12 @@
       "options": {
         "profile": "Profile activity (contributions, pull requests, languages)",
         "repositories": "Repositories (stats, releases, CI state)"
+      }
+    },
+    "language_weighting": {
+      "options": {
+        "commit_weighted": "By commits (repository language mix times your commits)",
+        "repo_count": "By repositories (each repository counts once)"
       }
     }
   }

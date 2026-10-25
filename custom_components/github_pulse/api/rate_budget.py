@@ -60,6 +60,17 @@ class RateBudget:
         """Return the last known budget for a resource."""
         return self._resources.get(resource)
 
+    def as_dict(self) -> dict[str, dict[str, float]]:
+        """Return a serialisable snapshot of every known resource."""
+        return {
+            name: {
+                "limit": budget.limit,
+                "remaining": budget.remaining,
+                "reset_at": budget.reset_at,
+            }
+            for name, budget in self._resources.items()
+        }
+
     def is_low(self, resource: str = DEFAULT_RESOURCE) -> bool:
         """Return whether the resource is at or below the slow-down threshold.
 
