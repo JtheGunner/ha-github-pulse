@@ -102,7 +102,7 @@ Two automation blueprints ship in [`blueprints/automation/github_pulse`](bluepri
 
 ## 🗺️ Roadmap
 
-Planned next: German translation and a final hardening pass for 1.0. See [`docs/concept-and-plan.md`](docs/concept-and-plan.md).
+Planned next: a final hardening pass for 1.0. See [`docs/concept-and-plan.md`](docs/concept-and-plan.md).
 
 ---
 
