@@ -18,12 +18,14 @@ from .analytics.periods import (
     like_for_like_previous_year,
     month_to_date,
 )
+from .analytics.rhythm import Rhythm, rhythm
 from .const import WEIGHTING_COMMITS
 from .coordinator import GitHubPulseCoordinator, GroupFetcher
 from .history_fetch import fetch_daily, fetch_ranges
 from .history_store import HistoryStore
 from .language_store import LanguageStore
 from .models import GitHubPulseConfigEntry
+from .rhythm_fetch import fetch_event_times
 from .search_fetch import SearchCounts, fetch_search_counts
 from .settings import Settings
 from .statistics_import import build_series, import_series
@@ -33,8 +35,16 @@ GROUP_HISTORY = "history"
 GROUP_CALENDAR = "calendar"
 GROUP_LANGUAGES = "languages"
 GROUP_SEARCH = "search"
+GROUP_RHYTHM = "rhythm"
 PROFILE_GROUPS = frozenset(
-    {GROUP_CURRENT, GROUP_HISTORY, GROUP_CALENDAR, GROUP_LANGUAGES, GROUP_SEARCH}
+    {
+        GROUP_CURRENT,
+        GROUP_HISTORY,
+        GROUP_CALENDAR,
+        GROUP_LANGUAGES,
+        GROUP_SEARCH,
+        GROUP_RHYTHM,
+    }
 )
 
 
@@ -71,6 +81,7 @@ class ProfileCoordinator(GitHubPulseCoordinator):
             GROUP_CALENDAR: self._fetch_calendar,
             GROUP_LANGUAGES: self._fetch_languages,
             GROUP_SEARCH: self._fetch_search,
+            GROUP_RHYTHM: self._fetch_rhythm,
         }
         super().__init__(
             hass,
@@ -159,3 +170,9 @@ class ProfileCoordinator(GitHubPulseCoordinator):
         return await fetch_search_counts(
             self.client, self.config_entry.runtime_data.login
         )
+
+    async def _fetch_rhythm(self) -> Rhythm:
+        times = await fetch_event_times(
+            self.client, self.config_entry.runtime_data.login
+        )
+        return rhythm(times, dt_util.get_default_time_zone())

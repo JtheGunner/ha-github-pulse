@@ -19,12 +19,14 @@ from .analytics.history import MonthKey, MonthStats
 from .analytics.languages import LanguageMonth, combine, shares, shift
 from .analytics.patterns import busiest_month, streaks, weekday_pattern
 from .analytics.periods import percent_change
+from .analytics.rhythm import Rhythm
 from .const import WEIGHTING_COMMITS
 from .profile_coordinator import (
     GROUP_CALENDAR,
     GROUP_CURRENT,
     GROUP_HISTORY,
     GROUP_LANGUAGES,
+    GROUP_RHYTHM,
     GROUP_SEARCH,
     CurrentPeriods,
 )
@@ -63,6 +65,11 @@ class ProfileView:
         return self.data[GROUP_SEARCH]  # type: ignore[no-any-return]
 
     @property
+    def rhythm(self) -> Rhythm:
+        """Return the daily rhythm group."""
+        return self.data[GROUP_RHYTHM]  # type: ignore[no-any-return]
+
+    @property
     def daily(self) -> Mapping[date, int]:
         """Return the contribution calendar group."""
         return self.data[GROUP_CALENDAR]  # type: ignore[no-any-return]
@@ -89,6 +96,19 @@ def _contribution_attributes(view: ProfileView) -> Attributes:
         "visible": month.visible_total,
         "restricted": month.restricted,
         "includes_restricted": view.settings.include_restricted,
+    }
+
+
+def _night_owl_score(view: ProfileView) -> float | None:
+    share = view.rhythm.night_owl_share
+    return None if share is None else round(share * 100, 1)
+
+
+def _rhythm_attributes(view: ProfileView) -> Attributes:
+    return {
+        "events_analysed": view.rhythm.events,
+        "approximate": True,
+        "note": "Based on GitHub's most recent 300 events",
     }
 
 
@@ -312,6 +332,25 @@ PROFILE_SENSORS: tuple[ProfileSensorDescription, ...] = (
         device_class=SensorDeviceClass.ENUM,
         options=[name.lower() for name in day_name],
         value_fn=_most_productive_weekday,
+    ),
+    ProfileSensorDescription(
+        key="most_active_hour",
+        translation_key="most_active_hour",
+        group=GROUP_RHYTHM,
+        entity_registry_enabled_default=False,
+        value_fn=lambda view: view.rhythm.most_active_hour,
+        attributes_fn=_rhythm_attributes,
+    ),
+    ProfileSensorDescription(
+        key="night_owl_score",
+        translation_key="night_owl_score",
+        group=GROUP_RHYTHM,
+        entity_registry_enabled_default=False,
+        native_unit_of_measurement=PERCENTAGE,
+        suggested_display_precision=0,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=_night_owl_score,
+        attributes_fn=_rhythm_attributes,
     ),
     ProfileSensorDescription(
         key="language_shift",
