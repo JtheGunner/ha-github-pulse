@@ -11,6 +11,7 @@ from .analytics.actions import summarize
 from .const import CONF_REPOSITORY
 from .entity import GitHubPulseEntity, repository_device_info
 from .models import GitHubPulseConfigEntry
+from .repository_coordinator import repository_subentries
 from .sensor_actions import ACTIONS_BINARY_SENSORS, ActionsBinarySensorDescription
 from .sensor_repository import now
 
@@ -23,7 +24,7 @@ async def async_setup_entry(
     """Create the Actions binary sensors of every repository that tracks runs."""
     if (actions := entry.runtime_data.actions) is None:
         return
-    for subentry_id, subentry in entry.subentries.items():
+    for subentry_id, subentry in repository_subentries(entry):
         full_name = subentry.data[CONF_REPOSITORY]
         if full_name in actions.repositories:
             async_add_entities(

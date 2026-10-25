@@ -325,6 +325,71 @@
         "module_disabled": "Enable the Repositories module for this account first.",
         "reconfigure_successful": "The repository was updated."
       }
+    },
+    "query": {
+      "initiate_flow": {
+        "user": "Add custom query",
+        "reconfigure": "Change custom query"
+      },
+      "entry_type": "Custom query",
+      "step": {
+        "user": {
+          "title": "Add a custom query",
+          "description": "Run your own read-only GraphQL query and turn its result into a sensor. {detail}",
+          "data": {
+            "name": "Name",
+            "query": "GraphQL query",
+            "variables": "Variables (JSON object)",
+            "interval": "Update interval",
+            "state_template": "State template",
+            "attributes_template": "Attributes template",
+            "unit": "Unit of measurement",
+            "device_class": "Device class",
+            "state_class": "State class"
+          },
+          "data_description": {
+            "query": "A single `query`. Mutations are rejected. The variables `$owner`, `$start_of_month`, `$end_of_month`, `$start_of_year` and `$one_year_ago` are filled in when the query declares them.",
+            "variables": "Values for other declared variables as a JSON object, using the variable names as keys.",
+            "state_template": "A template over `value_json`, which holds the `data` of the response. It must render a single value.",
+            "attributes_template": "Optional. A template over `value_json` that must render a mapping."
+          }
+        },
+        "reconfigure": {
+          "title": "Change custom query",
+          "description": "The query is validated and test-run again. {detail}",
+          "data": {
+            "name": "Name",
+            "query": "GraphQL query",
+            "variables": "Variables (JSON object)",
+            "interval": "Update interval",
+            "state_template": "State template",
+            "attributes_template": "Attributes template",
+            "unit": "Unit of measurement",
+            "device_class": "Device class",
+            "state_class": "State class"
+          }
+        },
+        "confirm": {
+          "title": "Test run of {query_name}",
+          "description": "The query ran successfully. Raw result:\n\n```json\n{raw}\n```\n\nRendered state: **{state}**\n\nSubmit to save the sensor."
+        }
+      },
+      "error": {
+        "invalid_query": "The query cannot be used: {detail}",
+        "invalid_variables": "The variables are not valid: {detail}",
+        "too_expensive": "The query is too expensive: {detail}",
+        "interval_too_short": "This query needs an update interval of at least {detail} minutes.",
+        "template_error": "A template failed: {detail}",
+        "name_in_use": "A custom query with this name already exists.",
+        "not_found": "GitHub could not find something the query asks for.",
+        "no_access": "The token is not allowed to run this query.",
+        "invalid_auth": "GitHub rejected the stored token.",
+        "rate_limit": "The GitHub rate limit is used up. Try again later.",
+        "cannot_connect": "Could not reach GitHub."
+      },
+      "abort": {
+        "reconfigure_successful": "The custom query was updated."
+      }
     }
   }
 }

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Collection, Mapping
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
@@ -49,6 +49,29 @@ class QueryOutcome:
     state: StateValue
     attributes: dict[str, Any]
     errors: list[dict[str, Any]]
+    data: dict[str, Any]
+
+
+def resolve_variables(
+    declared: Collection[str],
+    helpers: Mapping[str, Any],
+    user: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Return the values for the variables the query declares.
+
+    User values win over helpers. Helpers the query does not declare are left
+    out, because GitHub rejects variables a query does not use.
+    """
+    unknown = sorted(set(user) - set(declared))
+    if unknown:
+        msg = f"variables not declared by the query: {', '.join(unknown)}"
+        raise QueryRenderError(msg)
+    values = {**helpers, **user}
+    missing = sorted(set(declared) - set(values))
+    if missing:
+        msg = f"no value for the declared variables: {', '.join(missing)}"
+        raise QueryRenderError(msg)
+    return {name: values[name] for name in declared}
 
 
 async def run_query(
@@ -67,7 +90,7 @@ async def run_query(
         if definition.attributes_template
         else {}
     )
-    return QueryOutcome(state, attributes, result.errors)
+    return QueryOutcome(state, attributes, result.errors, result.data)
 
 
 def _render(hass: HomeAssistant, source: str, context: Mapping[str, Any]) -> Any:

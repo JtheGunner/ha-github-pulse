@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Collection
 
+from homeassistant.config_entries import ConfigSubentry
 from homeassistant.core import HomeAssistant
 
 from .const import CONF_REPOSITORY, SUBENTRY_REPOSITORY
@@ -20,6 +21,17 @@ from .settings import Settings
 GROUP_OVERVIEW = "overview"
 GROUP_DOWNLOADS = "downloads"
 REPOSITORY_GROUPS = frozenset({GROUP_OVERVIEW, GROUP_DOWNLOADS})
+
+
+def repository_subentries(
+    entry: GitHubPulseConfigEntry,
+) -> list[tuple[str, ConfigSubentry]]:
+    """Return the id and data holder of every repository subentry."""
+    return [
+        (subentry_id, sub)
+        for subentry_id, sub in entry.subentries.items()
+        if sub.subentry_type == SUBENTRY_REPOSITORY
+    ]
 
 
 def tracked_repositories(entry: GitHubPulseConfigEntry) -> list[str]:
