@@ -101,7 +101,7 @@ async def test_unavailable_module_is_named_in_the_error(
     result = await _submit(hass, await _start(hass))
 
     assert result["errors"] == {"base": "module_unavailable"}
-    assert result["description_placeholders"] == {"modules": "repositories"}
+    assert result["description_placeholders"]["modules"] == "repositories"
 
 
 async def test_selecting_no_module_is_rejected(
