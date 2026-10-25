@@ -44,6 +44,8 @@ Requires Home Assistant 2026.9 or newer.
 
 ## 🔑 Access token
 
+You need **one** token. It serves every module you enable. A classic token with `repo` and `read:org` covers everything; the table shows the minimum per module.
+
 | Module | Classic token | Fine-grained token |
 | --- | --- | --- |
 | 👤 Profile | no scope for public activity; `repo` + `read:org` adds private repositories | Metadata read, one owner only |

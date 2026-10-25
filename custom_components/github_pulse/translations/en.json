@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Connect GitHub",
-        "description": "Create a personal access token at {tokens_url} and choose what to track.\n\n**Profile** works for public activity with any token. A classic token with `repo` and `read:org` also shows contributions in private repositories; a fine-grained token only sees one owner and cannot access Packages. Why some contributions are \"restricted\": {docs_url}.\n\n**Repositories** needs read access to the repositories you add later (fine-grained: Metadata, Contents, Issues, Pull requests and Actions).",
+        "description": "Create **one** personal access token at {tokens_url}, paste it below and choose what to track. The same token serves every module you select.\n\n**Recommended:** a classic token with the scopes `repo` and `read:org`. It covers Profile (including private contributions) and Repositories (including Actions).\n\n**Alternative:** a fine-grained token also works, but only for a single owner and without private contributions. Give it read access to Metadata, Contents, Issues, Pull requests and Actions.\n\nWhy some contributions are \"restricted\": {docs_url}.",
         "data": {
           "access_token": "Personal access token",
           "modules": "What do you want to track?"
