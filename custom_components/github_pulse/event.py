@@ -19,6 +19,7 @@ from .const import ATTRIBUTION, CONF_ACTIONS, CONF_REPOSITORY, DOMAIN
 from .entity import repository_device_info
 from .events import EventDispatcher
 from .models import GitHubPulseConfigEntry
+from .repository_coordinator import repository_subentries
 
 ACCOUNT_EVENT_TYPES = [REVIEW_REQUESTED, PR_MERGED]
 RELEASE_EVENT_TYPES = [RELEASE_PUBLISHED]
@@ -37,7 +38,7 @@ async def async_setup_entry(
     if entry.runtime_data.profile is not None:
         async_add_entities([AccountEvents(dispatcher, entry)])
     if entry.runtime_data.repositories is not None:
-        for subentry_id, subentry in entry.subentries.items():
+        for subentry_id, subentry in repository_subentries(entry):
             full_name = subentry.data[CONF_REPOSITORY]
             types = list(RELEASE_EVENT_TYPES)
             if subentry.data.get(CONF_ACTIONS):

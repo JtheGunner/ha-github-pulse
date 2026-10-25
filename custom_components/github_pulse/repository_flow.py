@@ -137,7 +137,7 @@ class RepositorySubentryFlow(ConfigSubentryFlow):
             ):
                 return None, "actions_no_access"
         except GitHubError as err:
-            return None, _error_code(err)
+            return None, error_code(err)
         return info, None
 
 
@@ -151,5 +151,5 @@ _ERROR_CODES: tuple[tuple[type[GitHubError], str], ...] = (
 )
 
 
-def _error_code(error: GitHubError) -> str:
+def error_code(error: GitHubError) -> str:
     return next(code for kind, code in _ERROR_CODES if isinstance(error, kind))

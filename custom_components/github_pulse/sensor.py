@@ -21,6 +21,7 @@ from .repository_coordinator import (
     GROUP_DOWNLOADS,
     GROUP_OVERVIEW,
     RepositoryCoordinator,
+    repository_subentries,
 )
 from .sensor_actions import ACTIONS_SENSORS, ActionsSensorDescription
 from .sensor_profile import PROFILE_SENSORS, ProfileSensorDescription, ProfileView
@@ -43,7 +44,7 @@ async def async_setup_entry(
             ProfileSensor(profile, description) for description in PROFILE_SENSORS
         )
     if (actions := entry.runtime_data.actions) is not None:
-        for subentry_id, subentry in entry.subentries.items():
+        for subentry_id, subentry in repository_subentries(entry):
             full_name = subentry.data[CONF_REPOSITORY]
             if full_name in actions.repositories:
                 async_add_entities(
@@ -54,7 +55,7 @@ async def async_setup_entry(
                     config_subentry_id=subentry_id,
                 )
     if (repositories := entry.runtime_data.repositories) is not None:
-        for subentry_id, subentry in entry.subentries.items():
+        for subentry_id, subentry in repository_subentries(entry):
             full_name = subentry.data[CONF_REPOSITORY]
             async_add_entities(
                 (

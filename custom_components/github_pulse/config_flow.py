@@ -60,9 +60,11 @@ from .const import (
     MIN_HISTORY_YEARS,
     MIN_INTERVAL,
     MODULES,
+    SUBENTRY_QUERY,
     SUBENTRY_REPOSITORY,
     WEIGHTING_COMMITS,
 )
+from .query_flow import QuerySubentryFlow
 from .repository_flow import RepositorySubentryFlow
 from .settings import is_valid_time_zone
 
@@ -220,8 +222,11 @@ class GitHubPulseConfigFlow(ConfigFlow, domain=DOMAIN):
     def async_get_supported_subentry_types(
         cls, config_entry: ConfigEntry
     ) -> dict[str, type[ConfigSubentryFlow]]:
-        """Return the subentry types: one tracked repository each."""
-        return {SUBENTRY_REPOSITORY: RepositorySubentryFlow}
+        """Return the subentry types: tracked repositories and custom queries."""
+        return {
+            SUBENTRY_REPOSITORY: RepositorySubentryFlow,
+            SUBENTRY_QUERY: QuerySubentryFlow,
+        }
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
