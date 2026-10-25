@@ -20,3 +20,21 @@ get_history:
       default: true
       selector:
         boolean:
+
+query:
+  fields:
+    config_entry_id:
+      required: false
+      selector:
+        config_entry:
+          integration: github_pulse
+    query:
+      required: true
+      example: "query { viewer { login } }"
+      selector:
+        text:
+          multiline: true
+    variables:
+      required: false
+      selector:
+        object:
