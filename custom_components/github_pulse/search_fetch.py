@@ -1,29 +1,51 @@
-"""Counts from the search API, which has its own, much smaller rate budget."""
+"""Pull request searches, which use GitHub's separate and much smaller budget."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Any
 
+from .analytics.events import PullRequestRef
 from .api import GitHubClient, GitHubRateLimitError
 
 SEARCH_RESOURCE = "search"
+PAGE_SIZE = 30
+_REPOS_PREFIX = "https://api.github.com/repos/"
 
 
 @dataclass(frozen=True, slots=True)
 class SearchCounts:
-    """Open pull requests that involve the account."""
+    """Open pull requests that involve the account, plus recent merges."""
 
     review_requested: int
     authored_open: int
+    review_pulls: tuple[PullRequestRef, ...] = field(default=())
+    merged_pulls: tuple[PullRequestRef, ...] = field(default=())
 
 
-async def _count(client: GitHubClient, query: str) -> int:
-    response = await client.rest_get("/search/issues", {"q": query, "per_page": "1"})
-    return int(response.data["total_count"])
+def _ref(item: dict[str, Any]) -> PullRequestRef:
+    return PullRequestRef(
+        id=item["id"],
+        repository=str(item.get("repository_url", "")).removeprefix(_REPOS_PREFIX),
+        number=item["number"],
+        title=item.get("title", ""),
+        url=item.get("html_url", ""),
+    )
+
+
+async def _search(
+    client: GitHubClient, query: str, per_page: int
+) -> tuple[int, tuple[PullRequestRef, ...]]:
+    response = await client.rest_get(
+        "/search/issues",
+        {"q": query, "per_page": str(per_page), "sort": "updated", "order": "desc"},
+    )
+    items = tuple(_ref(item) for item in response.data.get("items", []))
+    return int(response.data["total_count"]), items
 
 
 async def fetch_search_counts(client: GitHubClient, login: str) -> SearchCounts:
-    """Count pull requests awaiting the account's review and its own open ones.
+    """Count pull requests awaiting review and own open ones; list recent merges.
 
     Raises ``GitHubRateLimitError`` without calling GitHub while the search
     budget is nearly spent, so the caller keeps the last value.
@@ -34,8 +56,13 @@ async def fetch_search_counts(client: GitHubClient, login: str) -> SearchCounts:
             "search rate budget is low",
             reset_at=None if budget is None else budget.reset_at,
         )
-    review_requested = await _count(
-        client, f"is:pr is:open archived:false review-requested:{login}"
+    review_total, review_pulls = await _search(
+        client, f"is:pr is:open archived:false review-requested:{login}", PAGE_SIZE
     )
-    authored = await _count(client, f"is:pr is:open archived:false author:{login}")
-    return SearchCounts(review_requested, authored)
+    authored_total, _ = await _search(
+        client, f"is:pr is:open archived:false author:{login}", 1
+    )
+    _, merged_pulls = await _search(
+        client, f"is:pr is:merged author:{login}", PAGE_SIZE
+    )
+    return SearchCounts(review_total, authored_total, review_pulls, merged_pulls)

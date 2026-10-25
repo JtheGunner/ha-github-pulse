@@ -217,6 +217,31 @@
       "actions_running": {
         "name": "Workflow running"
       }
+    },
+    "event": {
+      "repository_events": {
+        "name": "Activity",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "workflow_failed": "Workflow failed",
+              "workflow_recovered": "Workflow recovered",
+              "release_published": "Release published"
+            }
+          }
+        }
+      },
+      "account_events": {
+        "name": "Pull request activity",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "review_requested": "Review requested",
+              "pr_merged": "Pull request merged"
+            }
+          }
+        }
+      }
     }
   },
   "services": {
