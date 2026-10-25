@@ -31,6 +31,9 @@ async def _start(hass: HomeAssistant) -> str:
         DOMAIN, context={"source": SOURCE_USER}
     )
     assert result["type"] is FlowResultType.FORM
+    assert result["description_placeholders"] == {
+        "tokens_url": "https://github.com/settings/tokens"
+    }
     return result["flow_id"]
 
 

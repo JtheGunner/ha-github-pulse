@@ -26,6 +26,8 @@ from .api import (
 from .api.probe import fetch_token_info, probe_module
 from .const import CONF_MODULES, CONF_OWNER, CONF_TOKEN_TYPE, DOMAIN, MODULES
 
+TOKENS_URL = "https://github.com/settings/tokens"
+
 STEP_USER_SCHEMA = probatio.Schema(
     {
         probatio.Required(CONF_ACCESS_TOKEN): TextSelector(
@@ -60,7 +62,7 @@ class GitHubPulseConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Ask for a token and the modules to enable, then verify both."""
         errors: dict[str, str] = {}
-        placeholders: dict[str, str] = {}
+        placeholders: dict[str, str] = {"tokens_url": TOKENS_URL}
 
         if user_input is not None:
             token = user_input[CONF_ACCESS_TOKEN].strip()
