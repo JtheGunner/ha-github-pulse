@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -58,9 +59,27 @@ class FakeSession:
         json: Any = None,
     ) -> FakeResponse:
         self.requests.append(RecordedRequest(method, url, dict(headers), params, json))
+        if not self._responses and isinstance(json, dict) and "query" in json:
+            return _contribution_response(json["query"])
         return self._responses.pop(0)
 
 
 def transport_failure() -> FakeResponse:
     """Return a scripted response that fails like a dropped connection."""
     return FakeResponse(error=ClientError("connection reset"))
+
+
+CONTRIBUTION_TOTALS = {
+    "totalCommitContributions": 10,
+    "totalPullRequestContributions": 2,
+    "totalIssueContributions": 1,
+    "totalPullRequestReviewContributions": 3,
+    "restrictedContributionsCount": 4,
+}
+
+
+def _contribution_response(query: str) -> FakeResponse:
+    """Answer an aliased contribution query once the script is exhausted."""
+    aliases = re.findall(r"(\w+): contributionsCollection", query)
+    user = dict.fromkeys(aliases, CONTRIBUTION_TOTALS)
+    return FakeResponse(body={"data": {"user": user}})

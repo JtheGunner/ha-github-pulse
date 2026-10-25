@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 from zoneinfo import ZoneInfo
 
 from .analytics.history import MonthKey, MonthStats, chunk_months
-from .analytics.periods import month_range, to_utc_window
+from .analytics.periods import DateRange, month_range, to_utc_window
 from .api import GitHubClient
 
 _TIME = "%Y-%m-%dT%H:%M:%SZ"
@@ -21,16 +22,21 @@ def _alias(key: MonthKey) -> str:
     return f"m{key.year:04d}{key.month:02d}"
 
 
-def build_query(keys: list[MonthKey], zone: ZoneInfo) -> str:
-    """Return one query with a ``contributionsCollection`` alias per month."""
+def build_ranges_query(ranges: Mapping[str, DateRange], zone: ZoneInfo) -> str:
+    """Return one query with a ``contributionsCollection`` alias per range."""
     parts = []
-    for key in keys:
-        start, end = to_utc_window(month_range(key.year, key.month), zone)
+    for alias, rng in ranges.items():
+        start, end = to_utc_window(rng, zone)
         window = f'from: "{start:{_TIME}}", to: "{end:{_TIME}}"'
-        parts.append(
-            f"{_alias(key)}: contributionsCollection({window}) {{ {_FIELDS} }}"
-        )
+        parts.append(f"{alias}: contributionsCollection({window}) {{ {_FIELDS} }}")
     return "query($login: String!) { user(login: $login) { " + " ".join(parts) + " } }"
+
+
+def build_query(keys: list[MonthKey], zone: ZoneInfo) -> str:
+    """Return a query with one alias per whole calendar month."""
+    return build_ranges_query(
+        {_alias(key): month_range(key.year, key.month) for key in keys}, zone
+    )
 
 
 def _stats(raw: dict[str, Any]) -> MonthStats:
@@ -41,6 +47,18 @@ def _stats(raw: dict[str, Any]) -> MonthStats:
         reviews=raw["totalPullRequestReviewContributions"],
         restricted=raw["restrictedContributionsCount"],
     )
+
+
+async def fetch_ranges(
+    client: GitHubClient,
+    login: str,
+    ranges: Mapping[str, DateRange],
+    zone: ZoneInfo,
+) -> dict[str, MonthStats]:
+    """Fetch totals for arbitrary day ranges (each at most one year) in one request."""
+    response = await client.graphql(build_ranges_query(ranges, zone), {"login": login})
+    user = response.data["user"]
+    return {alias: _stats(user[alias]) for alias in ranges}
 
 
 async def fetch_months(
