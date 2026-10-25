@@ -349,9 +349,9 @@
           },
           "data_description": {
             "query": "A single `query`. Mutations are rejected. The variables `$owner`, `$start_of_month`, `$end_of_month`, `$start_of_year` and `$one_year_ago` are filled in when the query declares them.",
-            "variables": "Values for other declared variables, for example {\"first\": 10}.",
-            "state_template": "A template over `value_json` (the `data` of the response), for example {{ value_json.viewer.repositories.totalCount }}.",
-            "attributes_template": "Optional. Must render a mapping, for example {{ {'login': value_json.viewer.login} }}."
+            "variables": "Values for other declared variables as a JSON object, using the variable names as keys.",
+            "state_template": "A template over `value_json`, which holds the `data` of the response. It must render a single value.",
+            "attributes_template": "Optional. A template over `value_json` that must render a mapping."
           }
         },
         "reconfigure": {
