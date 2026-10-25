@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+from custom_components.github_pulse.config_flow import DOCS_URL
 from custom_components.github_pulse.const import (
     CONF_MODULES,
     CONF_OWNER,
@@ -32,7 +33,8 @@ async def _start(hass: HomeAssistant) -> str:
     )
     assert result["type"] is FlowResultType.FORM
     assert result["description_placeholders"] == {
-        "tokens_url": "https://github.com/settings/tokens"
+        "tokens_url": "https://github.com/settings/tokens",
+        "docs_url": DOCS_URL,
     }
     return result["flow_id"]
 

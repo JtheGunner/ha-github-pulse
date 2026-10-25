@@ -46,6 +46,9 @@ The integration is under development and not yet installable. See [`docs/concept
 | 🔧 | Custom queries | Your own read-only GraphQL queries |
 
 > [!NOTE]
+> Why do totals differ from github.com, and why are some counts "restricted"? See [visible and restricted contributions](docs/contributions.md).
+
+> [!NOTE]
 > Language statistics are **estimated**: GitHub provides language data per repository, not per commit. The estimate weights your commits by each repository's language mix.
 
 ---
