@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from collections.abc import Collection
+from collections.abc import Collection, Mapping
 from dataclasses import dataclass
 from datetime import date
+from typing import Any
 from zoneinfo import ZoneInfo
 
 from homeassistant.core import HomeAssistant
@@ -17,12 +18,14 @@ from .analytics.periods import (
     like_for_like_previous_year,
     month_to_date,
 )
+from .const import WEIGHTING_COMMITS
 from .coordinator import GitHubPulseCoordinator, GroupFetcher
 from .history_fetch import fetch_daily, fetch_ranges
 from .history_store import HistoryStore
 from .language_store import LanguageStore
 from .models import GitHubPulseConfigEntry
 from .settings import Settings
+from .statistics_import import build_series, import_series
 
 GROUP_CURRENT = "current"
 GROUP_HISTORY = "history"
@@ -75,6 +78,24 @@ class ProfileCoordinator(GitHubPulseCoordinator):
             groups=groups,
             active_groups=active_groups,
         )
+
+    async def _async_update_data(self) -> dict[str, Any]:
+        """Refresh the groups, then import statistics when the user opted in."""
+        data = await super()._async_update_data()
+        if self._settings.import_statistics:
+            self._import_statistics(data)
+        return data
+
+    def _import_statistics(self, data: Mapping[str, Any]) -> None:
+        series = build_series(
+            self.config_entry.runtime_data.login,
+            data.get(GROUP_HISTORY, {}),
+            data.get(GROUP_LANGUAGES, {}),
+            zone=self._settings.contribution_time_zone,
+            include_restricted=self._settings.include_restricted,
+            by_commits=self._settings.language_weighting == WEIGHTING_COMMITS,
+        )
+        import_series(self.hass, series)
 
     @property
     def settings(self) -> Settings:

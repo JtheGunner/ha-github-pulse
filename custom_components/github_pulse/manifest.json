@@ -1,7 +1,12 @@
 {
   "domain": "github_pulse",
   "name": "GitHub Pulse",
-  "codeowners": ["@JtheGunner"],
+  "after_dependencies": [
+    "recorder"
+  ],
+  "codeowners": [
+    "@JtheGunner"
+  ],
   "config_flow": true,
   "documentation": "https://github.com/JtheGunner/ha-github-pulse",
   "integration_type": "service",

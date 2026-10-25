@@ -51,13 +51,15 @@
           "history_years": "History depth",
           "contribution_time_zone": "Contribution time zone",
           "include_restricted": "Include contributions to private repositories I cannot see",
-          "language_weighting": "Language weighting"
+          "language_weighting": "Language weighting",
+          "import_statistics": "Import monthly history as statistics"
         },
         "data_description": {
           "history_years": "How many years of monthly history are loaded for comparisons and charts.",
           "contribution_time_zone": "GitHub counts contribution days in Pacific Time (America/Los_Angeles) unless your GitHub profile sets another time zone. Enter that zone's IANA name.",
           "include_restricted": "GitHub reports these only as an anonymous number. When on, totals include them.",
-          "language_weighting": "How the estimated language statistics weigh each repository."
+          "language_weighting": "How the estimated language statistics weigh each repository.",
+          "import_statistics": "Writes monthly commits, contributions and language shares to long-term statistics so the statistics graph card can draw them. Off by default."
         }
       }
     },

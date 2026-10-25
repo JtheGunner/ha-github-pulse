@@ -11,12 +11,14 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from .const import (
     CONF_CONTRIBUTION_TIME_ZONE,
     CONF_HISTORY_YEARS,
+    CONF_IMPORT_STATISTICS,
     CONF_INCLUDE_RESTRICTED,
     CONF_LANGUAGE_WEIGHTING,
     CONF_PROFILE_INTERVAL,
     CONF_REPOSITORY_INTERVAL,
     DEFAULT_CONTRIBUTION_TIME_ZONE,
     DEFAULT_HISTORY_YEARS,
+    DEFAULT_IMPORT_STATISTICS,
     DEFAULT_INCLUDE_RESTRICTED,
     DEFAULT_PROFILE_INTERVAL,
     DEFAULT_REPOSITORY_INTERVAL,
@@ -34,6 +36,7 @@ class Settings:
     contribution_time_zone: ZoneInfo
     include_restricted: bool
     language_weighting: str
+    import_statistics: bool
 
     @classmethod
     def from_options(cls, options: Mapping[str, Any]) -> Settings:
@@ -56,6 +59,9 @@ class Settings:
             ),
             language_weighting=str(
                 options.get(CONF_LANGUAGE_WEIGHTING, WEIGHTING_COMMITS)
+            ),
+            import_statistics=bool(
+                options.get(CONF_IMPORT_STATISTICS, DEFAULT_IMPORT_STATISTICS)
             ),
         )
 
