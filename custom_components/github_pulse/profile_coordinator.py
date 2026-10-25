@@ -24,6 +24,7 @@ from .history_fetch import fetch_daily, fetch_ranges
 from .history_store import HistoryStore
 from .language_store import LanguageStore
 from .models import GitHubPulseConfigEntry
+from .search_fetch import SearchCounts, fetch_search_counts
 from .settings import Settings
 from .statistics_import import build_series, import_series
 
@@ -31,8 +32,9 @@ GROUP_CURRENT = "current"
 GROUP_HISTORY = "history"
 GROUP_CALENDAR = "calendar"
 GROUP_LANGUAGES = "languages"
+GROUP_SEARCH = "search"
 PROFILE_GROUPS = frozenset(
-    {GROUP_CURRENT, GROUP_HISTORY, GROUP_CALENDAR, GROUP_LANGUAGES}
+    {GROUP_CURRENT, GROUP_HISTORY, GROUP_CALENDAR, GROUP_LANGUAGES, GROUP_SEARCH}
 )
 
 
@@ -68,6 +70,7 @@ class ProfileCoordinator(GitHubPulseCoordinator):
             GROUP_HISTORY: self._fetch_history,
             GROUP_CALENDAR: self._fetch_calendar,
             GROUP_LANGUAGES: self._fetch_languages,
+            GROUP_SEARCH: self._fetch_search,
         }
         super().__init__(
             hass,
@@ -151,3 +154,8 @@ class ProfileCoordinator(GitHubPulseCoordinator):
             years=self._settings.history_years,
         )
         return dict(self._languages.months)
+
+    async def _fetch_search(self) -> SearchCounts:
+        return await fetch_search_counts(
+            self.client, self.config_entry.runtime_data.login
+        )

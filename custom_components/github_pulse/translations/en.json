@@ -176,6 +176,12 @@
       },
       "last_push": {
         "name": "Last push"
+      },
+      "review_requests": {
+        "name": "Pull requests awaiting my review"
+      },
+      "authored_open_pull_requests": {
+        "name": "My open pull requests"
       }
     }
   },
