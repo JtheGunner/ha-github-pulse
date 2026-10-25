@@ -19,4 +19,4 @@ def test_manifest_domain_matches_constant() -> None:
 def test_hacs_minimum_version_is_declared() -> None:
     hacs = json.loads((ROOT / "hacs.json").read_text(encoding="utf-8"))
 
-    assert hacs["homeassistant"] == "2026.4.0"
+    assert hacs["homeassistant"] == "2026.9.0"

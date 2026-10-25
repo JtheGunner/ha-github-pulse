@@ -1,0 +1,35 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect GitHub",
+        "description": "Create a personal access token at https://github.com/settings/tokens and choose what to track.\n\n**Profile** works for public activity with any token. A classic token with `repo` and `read:org` also shows contributions in private repositories; a fine-grained token only sees one owner and cannot access Packages.\n\n**Repositories** needs read access to the repositories you add later (fine-grained: Metadata, Contents, Issues, Pull requests and Actions).",
+        "data": {
+          "access_token": "Personal access token",
+          "modules": "What do you want to track?"
+        },
+        "data_description": {
+          "access_token": "The token is stored in Home Assistant and only sent to api.github.com."
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "GitHub rejected the token. Check that it is valid and has not expired.",
+      "cannot_connect": "Could not reach GitHub. Try again in a moment.",
+      "rate_limit": "The GitHub API rate limit is exhausted. Try again later.",
+      "no_modules": "Select at least one thing to track.",
+      "module_unavailable": "This token cannot serve: {modules}. Deselect it or use a token with more access."
+    },
+    "abort": {
+      "already_configured": "This GitHub account is already configured."
+    }
+  },
+  "selector": {
+    "modules": {
+      "options": {
+        "profile": "Profile activity (contributions, pull requests, languages)",
+        "repositories": "Repositories (stats, releases, CI state)"
+      }
+    }
+  }
+}

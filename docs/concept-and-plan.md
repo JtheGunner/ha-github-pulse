@@ -39,7 +39,7 @@ Everything marked ✅ was tested against the live GitHub API with a classic toke
 | 14 | ✅ The calendar buckets days in **America/Los_Angeles** (PT with daylight saving), not UTC (`occurredAt` is `07:00Z` in summer, `08:00Z` in winter). | Month boundaries use the contribution time zone, configurable in options (default `America/Los_Angeles`). |
 | 15 | ⚠️ `PackageVersion.statistics.downloadsTotalCount` exists and is not deprecated; live values need a `read:packages` token. | Conditional go; Packages stays experimental. |
 | 16 | ✅ HA reloads the entry 30 s after an entity is enabled (verified in core source). | Demand-based fetching is viable. |
-| 17 | ✅ `StatisticMetaData` requires `mean_type` and `unit_class`; `has_mean` is removed in 2026.4. | Minimum HA version 2026.4.0. |
+| 17 | ✅ `StatisticMetaData` requires `mean_type` and `unit_class`; `has_mean` is removed in 2026.4. | Minimum HA version 2026.9.0. |
 
 Not fabricated: no number above comes from memory. The restricted-contribution observation is specific to the test account and is used only to justify the design.
 
@@ -444,7 +444,7 @@ Roughly 27–31 working days for a solo developer to reach 1.0, with a usable pu
 | 4 | History backfill: 3 years by default, configurable in the options flow | decided |
 | 5 | Streak reminder / "contributed today" is out of scope; plain streak statistics stay | decided |
 | 6 | Token advice: classic PAT for profile/org use, fine-grained for repo-only setups | proposed, confirmed by the Phase 0 permission matrix |
-| 7 | Minimum HA version 2026.4.0 (first release without the deprecated statistics `has_mean`) | decided (see `docs/api-findings.md`) |
+| 7 | Minimum HA version 2026.9.0 (no `has_mean`; HA switched from `voluptuous` to `probatio`) | decided (see `docs/api-findings.md`) |
 
 ---
 
