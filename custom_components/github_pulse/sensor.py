@@ -33,6 +33,7 @@ class ProfileSensor(GitHubPulseEntity, SensorEntity):
 
     coordinator: ProfileCoordinator
     entity_description: ProfileSensorDescription
+    _unrecorded_attributes = frozenset({"ranking", "changes_in_points"})
 
     def __init__(
         self, coordinator: ProfileCoordinator, description: ProfileSensorDescription

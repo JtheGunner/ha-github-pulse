@@ -125,6 +125,12 @@
           "saturday": "Saturday",
           "sunday": "Sunday"
         }
+      },
+      "top_language": {
+        "name": "Top language this year"
+      },
+      "language_shift": {
+        "name": "Language shift vs. last year"
       }
     }
   }

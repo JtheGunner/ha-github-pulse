@@ -11,6 +11,7 @@ import pytest
 from custom_components.github_pulse.const import (
     CONF_HISTORY_YEARS,
     CONF_INCLUDE_RESTRICTED,
+    CONF_LANGUAGE_WEIGHTING,
     CONF_MODULES,
     CONF_OWNER,
     CONF_TOKEN_TYPE,
@@ -62,6 +63,28 @@ def _contribution_response(query: str) -> FakeResponse:
     return FakeResponse(body={"data": {"user": user}})
 
 
+def _language_response(query: str) -> FakeResponse:
+    """PHP-heavy in 2026, Go-heavy in 2025."""
+
+    def repo(commits: int, language: str) -> dict[str, Any]:
+        return {
+            "contributions": {"totalCount": commits},
+            "repository": {
+                "languages": {"edges": [{"size": 100, "node": {"name": language}}]}
+            },
+        }
+
+    user = {}
+    for alias in re.findall(r"(m\d{6}): ", query):
+        year_repos = (
+            [repo(30, "PHP"), repo(10, "Go")]
+            if alias.startswith("m2026")
+            else [repo(40, "Go")]
+        )
+        user[alias] = {"commitContributionsByRepository": year_repos}
+    return FakeResponse(body={"data": {"user": user}})
+
+
 class _Session(FakeSession):
     """Answer the integration's queries from a fixed fixture."""
 
@@ -69,6 +92,8 @@ class _Session(FakeSession):
         query = (kwargs.get("json") or {}).get("query", "")
         if "contributionCalendar" in query:
             return _calendar_response()
+        if "commitContributionsByRepository" in query:
+            return _language_response(query)
         if "contributionsCollection" in query:
             return _contribution_response(query)
         return FakeResponse(status=404, body={})
@@ -95,7 +120,7 @@ async def _setup(
             CONF_TOKEN_TYPE: "classic",
             CONF_MODULES: ["profile"],
         },
-        options=options or {CONF_HISTORY_YEARS: 1},
+        options=options or {CONF_HISTORY_YEARS: 2},
     )
     entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(entry.entry_id)
@@ -196,7 +221,7 @@ async def test_a_group_without_enabled_sensors_is_not_fetched(
             CONF_TOKEN_TYPE: "classic",
             CONF_MODULES: ["profile"],
         },
-        options={CONF_HISTORY_YEARS: 1},
+        options={CONF_HISTORY_YEARS: 2},
     )
     entry.add_to_hass(hass)
     registry = er.async_get(hass)
@@ -239,3 +264,51 @@ async def test_history_sensors_survive_a_failed_current_group(
     assert _state(hass, "busiest_month").state == "2026-03"
     assert _state(hass, "current_streak").state == "3"
     assert _state(hass, "commits_this_month").state == "unavailable"
+
+
+async def test_top_language_is_marked_as_an_estimate(
+    hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
+) -> None:
+    await _setup(hass, patch_session)
+
+    state = _state(hass, "top_language")
+    assert state.state == "PHP"
+    assert state.attributes["method"] == "estimated"
+    assert state.attributes["ranking"] == {"PHP": 75.0, "Go": 25.0}
+    assert state.attributes["weighting"] == "commit_weighted"
+    assert state.attributes["truncated"] is False
+
+
+async def test_repo_count_weighting_changes_the_ranking(
+    hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
+) -> None:
+    await _setup(
+        hass,
+        patch_session,
+        {CONF_HISTORY_YEARS: 2, CONF_LANGUAGE_WEIGHTING: "repo_count"},
+    )
+
+    assert _state(hass, "top_language").attributes["ranking"] == {
+        "Go": 50.0,
+        "PHP": 50.0,
+    }
+
+
+async def test_language_shift_reports_the_top_gainer(
+    hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
+) -> None:
+    entry = await _setup(hass, patch_session)
+    registry = er.async_get(hass)
+    sensor = next(
+        e for e in registry.entities.values() if e.unique_id.endswith("language_shift")
+    )
+    registry.async_update_entity(sensor.entity_id, disabled_by=None)
+    await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+
+    state = hass.states.get(sensor.entity_id)
+    assert state.state == "PHP"
+    assert state.attributes["gainer_points"] == 75.0
+    assert state.attributes["loser"] == "Go"
+    assert state.attributes["loser_points"] == -75.0
+    assert state.attributes["compared_with"] == 2025

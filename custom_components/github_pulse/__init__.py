@@ -11,6 +11,7 @@ from .api import GitHubClient
 from .const import CONF_MODULES, CONF_OWNER, DOMAIN, MODULE_PROFILE
 from .groups import GroupedEntity, active_groups
 from .history_store import HistoryStore
+from .language_store import LanguageStore
 from .models import GitHubPulseConfigEntry, GitHubPulseData
 from .profile_coordinator import ProfileCoordinator
 from .sensor_profile import PROFILE_SENSORS
@@ -31,11 +32,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: GitHubPulseConfigEntry) 
     if MODULE_PROFILE in entry.runtime_data.modules:
         history = HistoryStore(hass, entry.entry_id)
         await history.async_load()
+        languages = LanguageStore(hass, entry.entry_id)
+        await languages.async_load()
         profile = ProfileCoordinator(
             hass,
             entry,
             settings=Settings.from_options(entry.options),
             history=history,
+            languages=languages,
             active_groups=_profile_groups(hass, entry),
         )
         await profile.async_config_entry_first_refresh()

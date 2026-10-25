@@ -16,12 +16,15 @@ from homeassistant.components.sensor import (
 from homeassistant.const import PERCENTAGE, UnitOfTime
 
 from .analytics.history import MonthKey, MonthStats
+from .analytics.languages import LanguageMonth, combine, shares, shift
 from .analytics.patterns import busiest_month, streaks, weekday_pattern
 from .analytics.periods import percent_change
+from .const import WEIGHTING_COMMITS
 from .profile_coordinator import (
     GROUP_CALENDAR,
     GROUP_CURRENT,
     GROUP_HISTORY,
+    GROUP_LANGUAGES,
     CurrentPeriods,
 )
 from .settings import Settings
@@ -46,6 +49,11 @@ class ProfileView:
     def history(self) -> Mapping[MonthKey, MonthStats]:
         """Return the monthly history group."""
         return self.data[GROUP_HISTORY]  # type: ignore[no-any-return]
+
+    @property
+    def languages(self) -> Mapping[MonthKey, LanguageMonth]:
+        """Return the monthly language estimate group."""
+        return self.data[GROUP_LANGUAGES]  # type: ignore[no-any-return]
 
     @property
     def daily(self) -> Mapping[date, int]:
@@ -110,6 +118,71 @@ def _busiest(view: ProfileView) -> str | None:
 def _busiest_attributes(view: ProfileView) -> Attributes:
     best = busiest_month(_monthly_totals(view), view.today.year)
     return {} if best is None else {"contributions": best.count}
+
+
+def _year_language(view: ProfileView, year: int) -> LanguageMonth:
+    return combine(month for key, month in view.languages.items() if key.year == year)
+
+
+def _year_shares(view: ProfileView, year: int) -> dict[str, float]:
+    return shares(
+        _year_language(view, year),
+        by_commits=view.settings.language_weighting == WEIGHTING_COMMITS,
+    )
+
+
+def _top_language(view: ProfileView) -> str | None:
+    ranking = _year_shares(view, view.today.year)
+    return next(iter(ranking), None)
+
+
+def _percent(ranking: Mapping[str, float], limit: int = 10) -> dict[str, float]:
+    return {
+        name: round(value * 100, 1) for name, value in list(ranking.items())[:limit]
+    }
+
+
+def _top_language_attributes(view: ProfileView) -> Attributes:
+    year = _year_language(view, view.today.year)
+    return {
+        "method": "estimated",
+        "weighting": view.settings.language_weighting,
+        "year": view.today.year,
+        "ranking": _percent(_year_shares(view, view.today.year)),
+        "unclassified_commits": year.unclassified_commits,
+        "truncated": year.truncated,
+    }
+
+
+def _language_changes(view: ProfileView) -> dict[str, float]:
+    year = view.today.year
+    previous = _year_shares(view, year - 1)
+    current = _year_shares(view, year)
+    if not previous or not current:
+        return {}
+    return shift(current, previous)
+
+
+def _top_gainer(view: ProfileView) -> str | None:
+    changes = _language_changes(view)
+    return next(iter(changes), None)
+
+
+def _language_shift_attributes(view: ProfileView) -> Attributes:
+    changes = _language_changes(view)
+    if not changes:
+        return {"method": "estimated"}
+    loser, loser_change = list(changes.items())[-1]
+    gainer, gainer_change = next(iter(changes.items()))
+    return {
+        "method": "estimated",
+        "compared_with": view.today.year - 1,
+        "gainer_points": round(gainer_change, 1),
+        "loser": loser,
+        "loser_points": round(loser_change, 1),
+        "changes_in_points": {n: round(v, 1) for n, v in list(changes.items())[:10]},
+        "gainer": gainer,
+    }
 
 
 def _active_days_this_month(view: ProfileView) -> int:
@@ -193,6 +266,13 @@ PROFILE_SENSORS: tuple[ProfileSensorDescription, ...] = (
         value_fn=lambda view: streaks(view.daily, view.today).longest,
     ),
     ProfileSensorDescription(
+        key="top_language",
+        translation_key="top_language",
+        group=GROUP_LANGUAGES,
+        value_fn=_top_language,
+        attributes_fn=_top_language_attributes,
+    ),
+    ProfileSensorDescription(
         key="reviews_this_month",
         translation_key="reviews_this_month",
         group=GROUP_CURRENT,
@@ -225,5 +305,13 @@ PROFILE_SENSORS: tuple[ProfileSensorDescription, ...] = (
         device_class=SensorDeviceClass.ENUM,
         options=[name.lower() for name in day_name],
         value_fn=_most_productive_weekday,
+    ),
+    ProfileSensorDescription(
+        key="language_shift",
+        translation_key="language_shift",
+        group=GROUP_LANGUAGES,
+        entity_registry_enabled_default=False,
+        value_fn=_top_gainer,
+        attributes_fn=_language_shift_attributes,
     ),
 )
