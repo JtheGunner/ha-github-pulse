@@ -79,7 +79,12 @@ CONTRIBUTION_TOTALS = {
 
 
 def _contribution_response(query: str) -> FakeResponse:
-    """Answer an aliased contribution query once the script is exhausted."""
+    """Answer a contribution query once the script is exhausted."""
+    if "contributionCalendar" in query:
+        calendar = {"contributionCalendar": {"weeks": []}}
+        return FakeResponse(
+            body={"data": {"user": {"contributionsCollection": calendar}}}
+        )
     aliases = re.findall(r"(\w+): contributionsCollection", query)
     user = dict.fromkeys(aliases, CONTRIBUTION_TOTALS)
     return FakeResponse(body={"data": {"user": user}})

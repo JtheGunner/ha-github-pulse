@@ -17,14 +17,15 @@ from .analytics.periods import (
     month_to_date,
 )
 from .coordinator import GitHubPulseCoordinator, GroupFetcher
-from .history_fetch import fetch_ranges
+from .history_fetch import fetch_daily, fetch_ranges
 from .history_store import HistoryStore
 from .models import GitHubPulseConfigEntry
 from .settings import Settings
 
 GROUP_CURRENT = "current"
 GROUP_HISTORY = "history"
-PROFILE_GROUPS = frozenset({GROUP_CURRENT, GROUP_HISTORY})
+GROUP_CALENDAR = "calendar"
+PROFILE_GROUPS = frozenset({GROUP_CURRENT, GROUP_HISTORY, GROUP_CALENDAR})
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,6 +56,7 @@ class ProfileCoordinator(GitHubPulseCoordinator):
         groups: dict[str, GroupFetcher] = {
             GROUP_CURRENT: self._fetch_current,
             GROUP_HISTORY: self._fetch_history,
+            GROUP_CALENDAR: self._fetch_calendar,
         }
         super().__init__(
             hass,
@@ -71,12 +73,12 @@ class ProfileCoordinator(GitHubPulseCoordinator):
         """Return the options this coordinator was created with."""
         return self._settings
 
-    def _today(self) -> date:
+    def today(self) -> date:
         """Return today's date in the contribution time zone."""
         return dt_util.utcnow().astimezone(self._settings.contribution_time_zone).date()
 
     async def _fetch_current(self) -> CurrentPeriods:
-        today = self._today()
+        today = self.today()
         ranges = {
             "current": month_to_date(today),
             "lastMonth": like_for_like_previous_month(today),
@@ -98,7 +100,15 @@ class ProfileCoordinator(GitHubPulseCoordinator):
             self.client,
             self.config_entry.runtime_data.login,
             zone,
-            today=self._today(),
+            today=self.today(),
             years=self._settings.history_years,
         )
         return dict(self._history.months)
+
+    async def _fetch_calendar(self) -> dict[date, int]:
+        return await fetch_daily(
+            self.client,
+            self.config_entry.runtime_data.login,
+            self.today(),
+            self._settings.contribution_time_zone,
+        )
