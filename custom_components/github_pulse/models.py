@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from homeassistant.config_entries import ConfigEntry
@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from .actions_coordinator import ActionsCoordinator
     from .events import EventDispatcher
     from .profile_coordinator import ProfileCoordinator
+    from .query_coordinator import QueryCoordinator
     from .repository_coordinator import RepositoryCoordinator
 
 
@@ -26,6 +27,7 @@ class GitHubPulseData:
     profile: ProfileCoordinator | None = None
     repositories: RepositoryCoordinator | None = None
     actions: ActionsCoordinator | None = None
+    queries: dict[str, QueryCoordinator] = field(default_factory=dict)
     events: EventDispatcher | None = None
 
 

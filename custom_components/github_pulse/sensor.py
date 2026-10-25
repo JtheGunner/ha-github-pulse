@@ -6,17 +6,27 @@ from collections.abc import Mapping
 from datetime import datetime
 from typing import Any
 
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntity,
+    SensorStateClass,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import StateType
 
 from .actions_coordinator import GROUP_RUNS, ActionsCoordinator
 from .analytics.actions import summarize
-from .const import CONF_REPOSITORY
+from .const import (
+    CONF_DEVICE_CLASS,
+    CONF_REPOSITORY,
+    CONF_STATE_CLASS,
+    CONF_UNIT,
+)
 from .entity import GitHubPulseEntity, repository_device_info
 from .models import GitHubPulseConfigEntry
 from .profile_coordinator import ProfileCoordinator
+from .query_coordinator import GROUP_QUERY, QueryCoordinator
 from .repository_coordinator import (
     GROUP_DOWNLOADS,
     GROUP_OVERVIEW,
@@ -54,6 +64,8 @@ async def async_setup_entry(
                     ),
                     config_subentry_id=subentry_id,
                 )
+    for subentry_id, query in entry.runtime_data.queries.items():
+        async_add_entities([QuerySensor(query)], config_subentry_id=subentry_id)
     if (repositories := entry.runtime_data.repositories) is not None:
         for subentry_id, subentry in repository_subentries(entry):
             full_name = subentry.data[CONF_REPOSITORY]
@@ -190,3 +202,33 @@ class ActionsSensor(GitHubPulseEntity, SensorEntity):
             return None
         value: StateType = self.entity_description.value_fn(summarize(runs, now()))
         return value
+
+
+class QuerySensor(GitHubPulseEntity, SensorEntity):
+    """A sensor rendered from the result of a custom query."""
+
+    coordinator: QueryCoordinator
+
+    def __init__(self, coordinator: QueryCoordinator) -> None:
+        """Create the sensor for one custom query."""
+        subentry = coordinator.subentry
+        super().__init__(coordinator, f"query_{subentry.subentry_id}", GROUP_QUERY)
+        data = subentry.data
+        self._attr_name = subentry.title
+        self._attr_native_unit_of_measurement = data.get(CONF_UNIT) or None
+        if device_class := data.get(CONF_DEVICE_CLASS):
+            self._attr_device_class = SensorDeviceClass(device_class)
+        if state_class := data.get(CONF_STATE_CLASS):
+            self._attr_state_class = SensorStateClass(state_class)
+
+    @property
+    def native_value(self) -> StateType:
+        """Return the rendered state."""
+        outcome = self.coordinator.outcome()
+        return None if outcome is None else outcome.state
+
+    @property
+    def extra_state_attributes(self) -> Mapping[str, Any] | None:
+        """Return the rendered attributes."""
+        outcome = self.coordinator.outcome()
+        return None if outcome is None else outcome.attributes

@@ -28,6 +28,7 @@ from .history_store import HistoryStore
 from .language_store import LanguageStore
 from .models import GitHubPulseConfigEntry, GitHubPulseData
 from .profile_coordinator import ProfileCoordinator
+from .query_coordinator import QueryCoordinator, query_subentries
 from .repository_coordinator import (
     RepositoryCoordinator,
     tracked_repositories,
@@ -92,6 +93,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: GitHubPulseConfigEntry) 
         )
         await actions.async_config_entry_first_refresh()
         entry.runtime_data.actions = actions
+    for subentry_id, subentry in query_subentries(entry):
+        query = QueryCoordinator(hass, entry, subentry)
+        await query.async_refresh()
+        entry.runtime_data.queries[subentry_id] = query
     await _async_setup_events(hass, entry)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(_async_reload_on_change(entry)))
