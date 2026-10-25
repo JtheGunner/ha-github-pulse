@@ -38,3 +38,19 @@ query:
       required: false
       selector:
         object:
+
+year_in_review:
+  fields:
+    config_entry_id:
+      required: false
+      selector:
+        config_entry:
+          integration: github_pulse
+    year:
+      required: false
+      example: 2025
+      selector:
+        number:
+          min: 2008
+          max: 2100
+          mode: box

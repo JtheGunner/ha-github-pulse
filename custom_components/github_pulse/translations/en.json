@@ -233,6 +233,9 @@
       },
       "stale_pull_requests": {
         "name": "Stale pull requests"
+      },
+      "year_in_review": {
+        "name": "Year in review"
       }
     },
     "binary_sensor": {
@@ -304,6 +307,20 @@
         "variables": {
           "name": "Variables",
           "description": "Values for declared variables. The owner and date helpers are filled in when the query declares them."
+        }
+      }
+    },
+    "year_in_review": {
+      "name": "Year in review",
+      "description": "Returns the headline figures of a calendar year: contributions, busiest month, top language (estimated) and longest streak.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "The GitHub Pulse account. Optional when only one is set up."
+        },
+        "year": {
+          "name": "Year",
+          "description": "The year to summarise. Defaults to the current year."
         }
       }
     }

@@ -10,6 +10,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - Custom queries: add your own read-only GraphQL query as a sensor. Queries are validated (single `query`, cost cap, minimum interval), test-run before saving, and rendered with templates over `value_json`.
 - Optional rhythm sensors: most active hour and night-owl score, labelled approximate.
 - Optional work-in-progress sensors: average time to merge and stale pull requests.
+- Year in review: service `github_pulse.year_in_review` and an optional text sensor.
 - Preset queries as starting points for custom queries.
 - Service `github_pulse.query` to run a read-only GraphQL query and get the result as a response.
 

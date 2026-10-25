@@ -16,12 +16,15 @@ from homeassistant.helpers import config_validation as cv
 
 from .analytics.history import MonthKey
 from .analytics.languages import shares
+from .analytics.year_review import summary, year_in_review
 from .const import DOMAIN, WEIGHTING_COMMITS
 from .models import GitHubPulseConfigEntry
-from .profile_coordinator import GROUP_HISTORY, GROUP_LANGUAGES
+from .profile_coordinator import GROUP_CALENDAR, GROUP_HISTORY, GROUP_LANGUAGES
 from .query_service import async_setup_query_service
 
 SERVICE_GET_HISTORY = "get_history"
+SERVICE_YEAR_IN_REVIEW = "year_in_review"
+ATTR_YEAR = "year"
 ATTR_CONFIG_ENTRY_ID = "config_entry_id"
 ATTR_START = "start"
 ATTR_END = "end"
@@ -38,6 +41,14 @@ GET_HISTORY_SCHEMA = probatio.Schema(
 )
 
 
+YEAR_IN_REVIEW_SCHEMA = probatio.Schema(
+    {
+        probatio.Optional(ATTR_CONFIG_ENTRY_ID): cv.string,
+        probatio.Optional(ATTR_YEAR): cv.positive_int,
+    }
+)
+
+
 def async_setup_services(hass: HomeAssistant) -> None:
     """Register the services."""
     hass.services.async_register(
@@ -45,6 +56,13 @@ def async_setup_services(hass: HomeAssistant) -> None:
         SERVICE_GET_HISTORY,
         _async_get_history,
         schema=GET_HISTORY_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_YEAR_IN_REVIEW,
+        _async_year_in_review,
+        schema=YEAR_IN_REVIEW_SCHEMA,
         supports_response=SupportsResponse.ONLY,
     )
     async_setup_query_service(hass, _entry)
@@ -143,4 +161,46 @@ async def _async_get_history(call: ServiceCall) -> ServiceResponse:
                 if _in_range(key, start, end)
             ],
         }
+    return response
+
+
+async def _async_year_in_review(call: ServiceCall) -> ServiceResponse:
+    """Return the headline figures of a year and a one-line summary."""
+    entry = _entry(call.hass, call.data.get(ATTR_CONFIG_ENTRY_ID))
+    profile = entry.runtime_data.profile
+    if profile is None:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN, translation_key="profile_disabled"
+        )
+    year = call.data.get(ATTR_YEAR, profile.today().year)
+    data = profile.data or {}
+    review = year_in_review(
+        year,
+        data.get(GROUP_HISTORY, {}),
+        data.get(GROUP_LANGUAGES, {}),
+        data.get(GROUP_CALENDAR, {}),
+        include_restricted=profile.settings.include_restricted,
+        by_commits=profile.settings.language_weighting == WEIGHTING_COMMITS,
+    )
+    best = review.busiest_month
+    response: dict[str, Any] = {
+        "year": review.year,
+        "summary": summary(review),
+        "contributions": review.contributions,
+        "commits": review.commits,
+        "pull_requests": review.pull_requests,
+        "reviews": review.reviews,
+        "issues": review.issues,
+        "active_months": review.active_months,
+        "busiest_month": None if best is None else MonthKey(year, best.month).label,
+        "busiest_month_contributions": None if best is None else best.count,
+        "top_language": review.top_language,
+        "language_method": "estimated",
+        "longest_streak": review.longest_streak,
+        "missing_groups": sorted(
+            group
+            for group in (GROUP_HISTORY, GROUP_LANGUAGES, GROUP_CALENDAR)
+            if group not in data
+        ),
+    }
     return response
