@@ -35,7 +35,7 @@ from .api import (
     GitHubError,
     GitHubRateLimitError,
 )
-from .api.probe import TokenInfo, fetch_token_info, probe_module
+from .api.probe import TokenInfo, TokenType, fetch_token_info, probe_module
 from .const import (
     CONF_CONTRIBUTION_TIME_ZONE,
     CONF_HISTORY_YEARS,
@@ -163,6 +163,11 @@ def _options_schema(current: Mapping[str, Any]) -> probatio.Schema:
     )
 
 
+def _lacks_private_access(info: TokenInfo) -> bool:
+    """Return whether a classic token cannot read private repositories."""
+    return info.token_type is TokenType.CLASSIC and "repo" not in info.scopes
+
+
 class _Verification:
     """Outcome of checking a token (and optionally modules) against GitHub."""
 
@@ -211,6 +216,8 @@ class GitHubPulseConfigFlow(ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
+    _pending: dict[str, Any]
+
     @staticmethod
     @callback
     def async_get_options_flow(config_entry: ConfigEntry) -> GitHubPulseOptionsFlow:
@@ -247,15 +254,15 @@ class GitHubPulseConfigFlow(ConfigFlow, domain=DOMAIN):
                 if verified.info:
                     await self.async_set_unique_id(verified.info.login.lower())
                     self._abort_if_unique_id_configured()
-                    return self.async_create_entry(
-                        title=verified.info.login,
-                        data={
-                            CONF_ACCESS_TOKEN: token,
-                            CONF_OWNER: verified.info.login,
-                            CONF_TOKEN_TYPE: verified.info.token_type.value,
-                            CONF_MODULES: modules,
-                        },
-                    )
+                    self._pending = {
+                        CONF_ACCESS_TOKEN: token,
+                        CONF_OWNER: verified.info.login,
+                        CONF_TOKEN_TYPE: verified.info.token_type.value,
+                        CONF_MODULES: modules,
+                    }
+                    if _lacks_private_access(verified.info):
+                        return await self.async_step_limited_token()
+                    return self._create_pending_entry()
 
         return self.async_show_form(
             step_id="user",
@@ -264,6 +271,20 @@ class GitHubPulseConfigFlow(ConfigFlow, domain=DOMAIN):
             ),
             errors=errors,
             description_placeholders=placeholders,
+        )
+
+    async def async_step_limited_token(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Warn that the classic token cannot see private data, then continue."""
+        if user_input is not None:
+            return self._create_pending_entry()
+        return self.async_show_form(step_id="limited_token")
+
+    def _create_pending_entry(self) -> ConfigFlowResult:
+        """Create the entry from the verified setup data."""
+        return self.async_create_entry(
+            title=self._pending[CONF_OWNER], data=self._pending
         )
 
     async def async_step_reauth(

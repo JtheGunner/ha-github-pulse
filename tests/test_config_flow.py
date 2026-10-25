@@ -195,3 +195,34 @@ async def test_entry_loads_and_unloads(
 
     assert await hass.config_entries.async_unload(entry.entry_id)
     assert entry.state is ConfigEntryState.NOT_LOADED
+
+
+async def test_classic_token_without_repo_scope_gets_a_notice_first(
+    hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
+) -> None:
+    limited = FakeResponse(
+        200, {"login": "Octocat"}, {"X-OAuth-Scopes": "read:packages"}
+    )
+    patch_session(FakeSession(limited, GRAPHQL_OK, GRAPHQL_OK))
+
+    result = await _submit(hass, await _start(hass))
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "limited_token"
+    assert not hass.config_entries.async_entries(DOMAIN)
+
+    done = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+
+    assert done["type"] is FlowResultType.CREATE_ENTRY
+    assert done["data"][CONF_TOKEN_TYPE] == "classic"
+
+
+async def test_fine_grained_token_skips_the_notice(
+    hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
+) -> None:
+    fine = FakeResponse(200, {"login": "Octocat"}, {})
+    patch_session(FakeSession(fine, GRAPHQL_OK, GRAPHQL_OK))
+
+    result = await _submit(hass, await _start(hass), token="github_pat_x")
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY

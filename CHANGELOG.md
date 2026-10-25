@@ -7,6 +7,7 @@ All notable changes to this project are documented here. The format follows [Kee
 ### Changed
 
 - The setup form now states that a single token serves all modules and recommends a classic token with `repo` and `read:org`.
+- A classic token without the `repo` scope now gets a notice during setup that private data stays invisible, instead of passing silently.
 
 ## [1.0.0] - 2026-10-25
 
