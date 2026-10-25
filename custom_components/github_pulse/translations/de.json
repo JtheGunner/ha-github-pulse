@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "GitHub verbinden",
-        "description": "Erstelle unter {tokens_url} ein Personal Access Token und wähle, was erfasst werden soll.\n\n**Profil** funktioniert für öffentliche Aktivität mit jedem Token. Ein klassisches Token mit `repo` und `read:org` zeigt zusätzlich Beiträge in privaten Repositories; ein feingranulares Token sieht nur einen Besitzer und kann nicht auf Packages zugreifen. Warum manche Beiträge „eingeschränkt“ sind: {docs_url}.\n\n**Repositories** braucht Lesezugriff auf die Repositories, die du später hinzufügst (feingranular: Metadata, Contents, Issues, Pull requests und Actions).",
+        "description": "Erstelle unter {tokens_url} **ein** Personal Access Token, füge es unten ein und wähle, was erfasst werden soll. Dasselbe Token bedient alle gewählten Module.\n\n**Empfohlen:** ein klassisches Token mit den Scopes `repo` und `read:org`. Es deckt Profil (auch private Beiträge) und Repositories (inklusive Actions) ab.\n\n**Alternative:** ein feingranulares Token funktioniert ebenfalls, aber nur für einen Besitzer und ohne private Beiträge. Gib ihm Lesezugriff auf Metadata, Contents, Issues, Pull requests und Actions.\n\nWarum manche Beiträge „eingeschränkt“ sind: {docs_url}.",
         "data": {
           "access_token": "Personal Access Token",
           "modules": "Was möchtest du erfassen?"
