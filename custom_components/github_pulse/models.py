@@ -11,6 +11,7 @@ from .api import GitHubClient
 
 if TYPE_CHECKING:
     from .profile_coordinator import ProfileCoordinator
+    from .repository_coordinator import RepositoryCoordinator
 
 
 @dataclass(slots=True)
@@ -21,6 +22,7 @@ class GitHubPulseData:
     login: str
     modules: frozenset[str]
     profile: ProfileCoordinator | None = None
+    repositories: RepositoryCoordinator | None = None
 
 
 type GitHubPulseConfigEntry = ConfigEntry[GitHubPulseData]

@@ -33,6 +33,25 @@ REPO = FakeResponse(
         "archived": False,
     },
 )
+SETUP_SNAPSHOT = FakeResponse(
+    200,
+    {
+        "data": {
+            "r0": {
+                "nameWithOwner": "Octocat/Hello-World",
+                "stargazerCount": 1,
+                "forkCount": 0,
+                "isArchived": False,
+                "pushedAt": None,
+                "watchers": {"totalCount": 0},
+                "issues": {"totalCount": 0},
+                "pullRequests": {"totalCount": 0},
+                "defaultBranchRef": None,
+                "latestRelease": None,
+            }
+        }
+    },
+)
 RUNS = FakeResponse(200, {"workflow_runs": []})
 NOT_FOUND = FakeResponse(404, {"message": "Not Found"})
 FORBIDDEN = FakeResponse(403, {"message": "Resource not accessible"})
@@ -183,7 +202,9 @@ async def test_a_duplicate_is_aborted_case_insensitively(
         title="Octocat/Hello-World",
         unique_id="octocat/hello-world",
     )
-    entry = await _setup(hass, patch_session, REPO, subentries=[existing])
+    entry = await _setup(
+        hass, patch_session, SETUP_SNAPSHOT, REPO, subentries=[existing]
+    )
 
     result = await _submit(hass, entry, "OCTOCAT/hello-world")
 
@@ -212,7 +233,9 @@ async def test_the_actions_toggle_can_be_changed(
         title="Octocat/Hello-World",
         unique_id="octocat/hello-world",
     )
-    entry = await _setup(hass, patch_session, RUNS, subentries=[existing])
+    entry = await _setup(
+        hass, patch_session, SETUP_SNAPSHOT, RUNS, subentries=[existing]
+    )
     subentry_id = next(iter(entry.subentries))
 
     result = await hass.config_entries.subentries.async_init(
