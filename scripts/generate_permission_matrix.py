@@ -67,28 +67,82 @@ def build_probes(owner: str, repo: str) -> list[Probe]:
     r = f"/repos/{owner}/{repo}"
     rt = "/repos/{owner}/{repo}"
     return [
-        Probe("profile", "Contributions (GraphQL)", "POST", "/graphql", "/graphql",
-              GRAPHQL_CONTRIBUTIONS),
+        Probe(
+            "profile",
+            "Contributions (GraphQL)",
+            "POST",
+            "/graphql",
+            "/graphql",
+            GRAPHQL_CONTRIBUTIONS,
+        ),
         Probe("profile", "User profile", "GET", "/users/{username}", f"/users/{owner}"),
-        Probe("profile", "User events", "GET", "/users/{username}/events",
-              f"/users/{owner}/events?per_page=1"),
-        Probe("profile", "Search issues/PRs", "GET", "/search/issues",
-              "/search/issues?q=is:pr+is:open&per_page=1"),
+        Probe(
+            "profile",
+            "User events",
+            "GET",
+            "/users/{username}/events",
+            f"/users/{owner}/events?per_page=1",
+        ),
+        Probe(
+            "profile",
+            "Search issues/PRs",
+            "GET",
+            "/search/issues",
+            "/search/issues?q=is:pr+is:open&per_page=1",
+        ),
         Probe("repository", "Repository", "GET", rt, r),
-        Probe("repository", "Commits", "GET", f"{rt}/commits", f"{r}/commits?per_page=1"),
-        Probe("repository", "Releases", "GET", f"{rt}/releases", f"{r}/releases?per_page=1"),
-        Probe("repository", "Traffic views", "GET", f"{rt}/traffic/views",
-              f"{r}/traffic/views"),
-        Probe("repository", "Dependabot alerts", "GET", f"{rt}/dependabot/alerts",
-              f"{r}/dependabot/alerts?per_page=1"),
-        Probe("actions", "Workflow runs", "GET", f"{rt}/actions/runs",
-              f"{r}/actions/runs?per_page=1"),
-        Probe("actions", "Billing usage (user)", "GET",
-              "/users/{username}/settings/billing/usage",
-              f"/users/{owner}/settings/billing/usage"),
-        Probe("packages", "List packages (user)", "GET", "/user/packages",
-              "/user/packages?package_type=container"),
-        Probe("misc", "Notifications", "GET", "/notifications", "/notifications?per_page=1"),
+        Probe(
+            "repository", "Commits", "GET", f"{rt}/commits", f"{r}/commits?per_page=1"
+        ),
+        Probe(
+            "repository",
+            "Releases",
+            "GET",
+            f"{rt}/releases",
+            f"{r}/releases?per_page=1",
+        ),
+        Probe(
+            "repository",
+            "Traffic views",
+            "GET",
+            f"{rt}/traffic/views",
+            f"{r}/traffic/views",
+        ),
+        Probe(
+            "repository",
+            "Dependabot alerts",
+            "GET",
+            f"{rt}/dependabot/alerts",
+            f"{r}/dependabot/alerts?per_page=1",
+        ),
+        Probe(
+            "actions",
+            "Workflow runs",
+            "GET",
+            f"{rt}/actions/runs",
+            f"{r}/actions/runs?per_page=1",
+        ),
+        Probe(
+            "actions",
+            "Billing usage (user)",
+            "GET",
+            "/users/{username}/settings/billing/usage",
+            f"/users/{owner}/settings/billing/usage",
+        ),
+        Probe(
+            "packages",
+            "List packages (user)",
+            "GET",
+            "/user/packages",
+            "/user/packages?package_type=container",
+        ),
+        Probe(
+            "misc",
+            "Notifications",
+            "GET",
+            "/notifications",
+            "/notifications?per_page=1",
+        ),
     ]
 
 
@@ -111,7 +165,7 @@ def request(probe: Probe, token: str | None) -> Result:
         f"{API}{probe.path}", data=data, headers=headers, method=probe.method
     )
     try:
-        with urllib.request.urlopen(req, timeout=TIMEOUT) as response:  # noqa: S310
+        with urllib.request.urlopen(req, timeout=TIMEOUT) as response:
             status = response.status
             scopes = response.headers.get("X-Accepted-OAuth-Scopes", "")
     except urllib.error.HTTPError as err:
@@ -122,8 +176,10 @@ def request(probe: Probe, token: str | None) -> Result:
 
 def load_fine_grained_index() -> dict[tuple[str, str], str]:
     """Map (verb, request path template) to the fine-grained permission category."""
-    req = urllib.request.Request(FINE_GRAINED_DATA_URL, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(req, timeout=TIMEOUT) as response:  # noqa: S310
+    req = urllib.request.Request(
+        FINE_GRAINED_DATA_URL, headers={"User-Agent": USER_AGENT}
+    )
+    with urllib.request.urlopen(req, timeout=TIMEOUT) as response:
         data = json.load(response)
     return {
         (entry["verb"].upper(), entry["requestPath"]): category
@@ -132,9 +188,7 @@ def load_fine_grained_index() -> dict[tuple[str, str], str]:
     }
 
 
-def fine_grained_permission(
-    index: dict[tuple[str, str], str], probe: Probe
-) -> str:
+def fine_grained_permission(index: dict[tuple[str, str], str], probe: Probe) -> str:
     """Return the fine-grained permission category for a probe."""
     if probe.graphql:
         return "not documented (GraphQL)"
@@ -191,8 +245,12 @@ def main() -> int:
 
     index = load_fine_grained_index()
     rows = [
-        (probe, request(probe, token), request(probe, None),
-         fine_grained_permission(index, probe))
+        (
+            probe,
+            request(probe, token),
+            request(probe, None),
+            fine_grained_permission(index, probe),
+        )
         for probe in build_probes(args.owner, args.repo)
     ]
     Path(args.output).write_text(render(rows, args.owner, args.repo), encoding="utf-8")
