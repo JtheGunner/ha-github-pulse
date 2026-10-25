@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from datetime import date, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -72,3 +73,32 @@ async def fetch_months(
         for key in chunk:
             result[key] = _stats(user[_alias(key)])
     return result
+
+
+CALENDAR_DAYS = 365
+
+
+async def fetch_daily(
+    client: GitHubClient, login: str, today: date, zone: ZoneInfo
+) -> dict[date, int]:
+    """Fetch contributions per day for the last year, today included."""
+    rng = DateRange(today - timedelta(days=CALENDAR_DAYS - 1), today)
+    start, end = to_utc_window(rng, zone)
+    query = (
+        "query($login: String!, $from: DateTime!, $to: DateTime!) { "
+        "user(login: $login) { contributionsCollection(from: $from, to: $to) { "
+        "contributionCalendar { weeks { contributionDays { date contributionCount } } }"
+        " } } }"
+    )
+    response = await client.graphql(
+        query,
+        {"login": login, "from": f"{start:{_TIME}}", "to": f"{end:{_TIME}}"},
+    )
+    weeks = response.data["user"]["contributionsCollection"]["contributionCalendar"][
+        "weeks"
+    ]
+    return {
+        date.fromisoformat(day["date"]): day["contributionCount"]
+        for week in weeks
+        for day in week["contributionDays"]
+    }

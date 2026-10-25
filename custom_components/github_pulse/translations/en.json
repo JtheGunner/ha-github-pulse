@@ -78,5 +78,54 @@
         "repo_count": "By repositories (each repository counts once)"
       }
     }
+  },
+  "entity": {
+    "sensor": {
+      "contributions_this_month": {
+        "name": "Contributions this month"
+      },
+      "commits_this_month": {
+        "name": "Commits this month"
+      },
+      "pull_requests_this_month": {
+        "name": "Pull requests this month"
+      },
+      "commits_vs_last_month": {
+        "name": "Commits vs. last month"
+      },
+      "commits_vs_last_year": {
+        "name": "Commits vs. same month last year"
+      },
+      "busiest_month": {
+        "name": "Busiest month this year"
+      },
+      "current_streak": {
+        "name": "Current streak"
+      },
+      "longest_streak": {
+        "name": "Longest streak"
+      },
+      "reviews_this_month": {
+        "name": "Reviews this month"
+      },
+      "issues_this_month": {
+        "name": "Issues this month"
+      },
+      "active_days_this_month": {
+        "name": "Active days this month"
+      },
+      "most_productive_weekday": {
+        "name": "Most productive weekday",
+        "state": {
+          "monday": "Monday",
+          "tuesday": "Tuesday",
+          "wednesday": "Wednesday",
+          "thursday": "Thursday",
+          "friday": "Friday",
+          "saturday": "Saturday",
+          "sunday": "Sunday"
+        }
+      }
+    }
   }
 }

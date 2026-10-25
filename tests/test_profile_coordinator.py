@@ -137,7 +137,7 @@ async def test_rate_limited_setup_is_retried_later(
         headers={"X-RateLimit-Remaining": "0", "Retry-After": "3600"},
     )
 
-    await _setup(hass, patch_session, FakeSession(limited, limited), entry)
+    await _setup(hass, patch_session, FakeSession(limited, limited, limited), entry)
 
     assert entry.state is ConfigEntryState.SETUP_RETRY
 
