@@ -182,6 +182,40 @@
       },
       "authored_open_pull_requests": {
         "name": "My open pull requests"
+      },
+      "actions_last_result": {
+        "name": "Last workflow result",
+        "state": {
+          "success": "Success",
+          "failure": "Failure",
+          "cancelled": "Cancelled",
+          "skipped": "Skipped",
+          "timed_out": "Timed out",
+          "neutral": "Neutral",
+          "action_required": "Action required",
+          "stale": "Stale",
+          "startup_failure": "Startup failure"
+        }
+      },
+      "actions_runs_today": {
+        "name": "Workflow runs today"
+      },
+      "actions_queued_runs": {
+        "name": "Queued workflow runs"
+      },
+      "actions_failure_rate_7d": {
+        "name": "Workflow failure rate (7 days)"
+      },
+      "actions_failure_rate_30d": {
+        "name": "Workflow failure rate (30 days)"
+      },
+      "actions_average_duration": {
+        "name": "Average workflow duration"
+      }
+    },
+    "binary_sensor": {
+      "actions_running": {
+        "name": "Workflow running"
       }
     }
   },

@@ -34,3 +34,14 @@ class GitHubPulseEntity(CoordinatorEntity[GitHubPulseCoordinator]):
     def available(self) -> bool:
         """Return whether the entity's data group has loaded at least once."""
         return super().available and self._group in (self.coordinator.data or {})
+
+
+def repository_device_info(entry_id: str, full_name: str) -> DeviceInfo:
+    """Return the device shared by all entities of one tracked repository."""
+    return DeviceInfo(
+        identifiers={(DOMAIN, f"{entry_id}_{full_name.lower()}")},
+        name=full_name,
+        manufacturer="GitHub",
+        entry_type=DeviceEntryType.SERVICE,
+        configuration_url=f"https://github.com/{full_name}",
+    )

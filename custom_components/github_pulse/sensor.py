@@ -8,12 +8,13 @@ from typing import Any
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import StateType
 
-from .const import CONF_REPOSITORY, DOMAIN
-from .entity import GitHubPulseEntity
+from .actions_coordinator import GROUP_RUNS, ActionsCoordinator
+from .analytics.actions import summarize
+from .const import CONF_REPOSITORY
+from .entity import GitHubPulseEntity, repository_device_info
 from .models import GitHubPulseConfigEntry
 from .profile_coordinator import ProfileCoordinator
 from .repository_coordinator import (
@@ -21,6 +22,7 @@ from .repository_coordinator import (
     GROUP_OVERVIEW,
     RepositoryCoordinator,
 )
+from .sensor_actions import ACTIONS_SENSORS, ActionsSensorDescription
 from .sensor_profile import PROFILE_SENSORS, ProfileSensorDescription, ProfileView
 from .sensor_repository import (
     REPOSITORY_SENSORS,
@@ -40,6 +42,17 @@ async def async_setup_entry(
         async_add_entities(
             ProfileSensor(profile, description) for description in PROFILE_SENSORS
         )
+    if (actions := entry.runtime_data.actions) is not None:
+        for subentry_id, subentry in entry.subentries.items():
+            full_name = subentry.data[CONF_REPOSITORY]
+            if full_name in actions.repositories:
+                async_add_entities(
+                    (
+                        ActionsSensor(actions, full_name, description)
+                        for description in ACTIONS_SENSORS
+                    ),
+                    config_subentry_id=subentry_id,
+                )
     if (repositories := entry.runtime_data.repositories) is not None:
         for subentry_id, subentry in entry.subentries.items():
             full_name = subentry.data[CONF_REPOSITORY]
@@ -105,13 +118,8 @@ class RepositorySensor(GitHubPulseEntity, SensorEntity):
         )
         self.entity_description = description
         self._full_name = full_name
-        entry = coordinator.config_entry
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, f"{entry.entry_id}_{full_name.lower()}")},
-            name=full_name,
-            manufacturer="GitHub",
-            entry_type=DeviceEntryType.SERVICE,
-            configuration_url=f"https://github.com/{full_name}",
+        self._attr_device_info = repository_device_info(
+            coordinator.config_entry.entry_id, full_name
         )
 
     def _view(self) -> RepositoryView | None:
@@ -143,3 +151,41 @@ class RepositorySensor(GitHubPulseEntity, SensorEntity):
         if view is None or self.entity_description.attributes_fn is None:
             return None
         return self.entity_description.attributes_fn(view)
+
+
+class ActionsSensor(GitHubPulseEntity, SensorEntity):
+    """A workflow-run sensor of one tracked repository."""
+
+    coordinator: ActionsCoordinator
+    entity_description: ActionsSensorDescription
+
+    def __init__(
+        self,
+        coordinator: ActionsCoordinator,
+        full_name: str,
+        description: ActionsSensorDescription,
+    ) -> None:
+        """Create the sensor for one repository."""
+        super().__init__(
+            coordinator, f"{full_name.lower()}_{description.key}", GROUP_RUNS
+        )
+        self.entity_description = description
+        self._full_name = full_name
+        self._attr_device_info = repository_device_info(
+            coordinator.config_entry.entry_id, full_name
+        )
+
+    @property
+    def available(self) -> bool:
+        """Return whether the token could read this repository's runs."""
+        runs = (self.coordinator.data or {}).get(GROUP_RUNS, {}).get(self._full_name)
+        return super().available and runs is not None
+
+    @property
+    def native_value(self) -> StateType:
+        """Return the state."""
+        runs = (self.coordinator.data or {}).get(GROUP_RUNS, {}).get(self._full_name)
+        if runs is None:
+            return None
+        value: StateType = self.entity_description.value_fn(summarize(runs, now()))
+        return value
