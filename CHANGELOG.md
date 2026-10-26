@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] - 2026-10-26
+
+### Added
+
+- Per repository: commits and active days on the default branch this month, and the change versus last month and last year (like for like, so a partial month is never compared with a full one).
+- Per repository: pull requests and issues created this month.
+- These counts include every author, unlike the account sensors, and come from the existing batched query, so tracking a repository still costs no extra request.
+
 ## [1.1.0] - 2026-10-26
 
 ### Added
