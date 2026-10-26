@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- Adding repositories now offers a list of the most recently pushed repositories the token can read, with multi-select so several can be added at once. Typing a name still works, also when the list cannot be loaded.
+
 ## [1.0.2] - 2026-10-26
 
 ### Changed

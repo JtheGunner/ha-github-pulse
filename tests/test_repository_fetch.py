@@ -9,6 +9,8 @@ from typing import Any
 from unittest.mock import AsyncMock
 
 from custom_components.github_pulse.api import GitHubClient, GraphQLResult
+from custom_components.github_pulse.api.query_validation import parse_query
+from custom_components.github_pulse.api.repository import _LIST_QUERY
 from custom_components.github_pulse.const import (
     CONF_ACTIONS,
     CONF_MODULES,
@@ -207,3 +209,7 @@ async def test_without_repositories_no_coordinator_is_created(
     assert await hass.config_entries.async_setup(entry.entry_id)
 
     assert entry.runtime_data.repositories is None
+
+
+def test_the_listing_query_is_valid_graphql() -> None:
+    assert parse_query(_LIST_QUERY).declared_variables == frozenset()
