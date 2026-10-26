@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- The longest-streak sensor is now named "Longest streak (last year)", because it covers the one-year window GitHub allows per request. Existing entity IDs are unchanged.
+
 ## [1.0.1] - 2026-10-26
 
 ### Changed

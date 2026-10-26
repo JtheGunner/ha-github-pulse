@@ -121,7 +121,7 @@ Two automation blueprints ship in [`blueprints/automation/github_pulse`](bluepri
 
 ## 🗺️ Roadmap
 
-Possible next steps: a Packages module (it needs a classic token with `read:packages` and a verified API shape) and more presets for custom queries. See [`docs/concept-and-plan.md`](docs/concept-and-plan.md).
+Possible next steps: more presets for custom queries. A Packages module is not planned: GitHub's API returns package names and versions but no download counts. See [`docs/concept-and-plan.md`](docs/concept-and-plan.md).
 
 ---
 
