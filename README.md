@@ -37,6 +37,7 @@ You choose which parts to enable. That also decides which access token permissio
 2. Install **GitHub Pulse** and restart Home Assistant.
 3. Go to **Settings → Devices & services → Add integration → GitHub Pulse**.
 4. Paste a personal access token and choose the modules you want.
+5. Use **Add repository** to pick one or more repositories from a list of those your token can read, or type `owner/name`.
 
 Requires Home Assistant 2026.9 or newer.
 

@@ -11,6 +11,7 @@ from custom_components.github_pulse.const import (
     CONF_ACTIONS,
     CONF_MODULES,
     CONF_OWNER,
+    CONF_REPOSITORIES,
     CONF_REPOSITORY,
     CONF_TOKEN_TYPE,
     DOMAIN,
@@ -53,6 +54,14 @@ SETUP_SNAPSHOT = FakeResponse(
     },
 )
 RUNS = FakeResponse(200, {"workflow_runs": []})
+NO_REPOS = FakeResponse(200, {"data": {"viewer": {"repositories": {"nodes": []}}}})
+
+
+def _listing(*names: str) -> FakeResponse:
+    nodes = [{"nameWithOwner": name} for name in names]
+    return FakeResponse(200, {"data": {"viewer": {"repositories": {"nodes": nodes}}}})
+
+
 NOT_FOUND = FakeResponse(404, {"message": "Not Found"})
 FORBIDDEN = FakeResponse(403, {"message": "Resource not accessible"})
 BAD_CREDENTIALS = FakeResponse(401, {"message": "Bad credentials"})
@@ -91,14 +100,15 @@ async def _start(hass: HomeAssistant, entry: MockConfigEntry) -> dict[str, Any]:
 async def _submit(
     hass: HomeAssistant,
     entry: MockConfigEntry,
-    repository: str,
+    repository: str | list[str],
     *,
     actions: bool = False,
 ) -> dict[str, Any]:
     result = await _start(hass, entry)
+    names = [repository] if isinstance(repository, str) else repository
     return await hass.config_entries.subentries.async_configure(
         result["flow_id"],
-        {CONF_REPOSITORY: repository, CONF_ACTIONS: actions},
+        {CONF_REPOSITORIES: names, CONF_ACTIONS: actions},
     )
 
 
@@ -124,7 +134,7 @@ def test_parse_rejects_everything_else(value: str) -> None:
 async def test_a_repository_is_added_with_its_canonical_name(
     hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
 ) -> None:
-    entry = await _setup(hass, patch_session, REPO)
+    entry = await _setup(hass, patch_session, NO_REPOS, REPO)
 
     result = await _submit(hass, entry, "octocat/hello-world")
 
@@ -141,7 +151,7 @@ async def test_a_repository_is_added_with_its_canonical_name(
 async def test_actions_access_is_checked_when_requested(
     hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
 ) -> None:
-    entry = await _setup(hass, patch_session, REPO, RUNS)
+    entry = await _setup(hass, patch_session, NO_REPOS, REPO, RUNS)
 
     result = await _submit(hass, entry, "octocat/Hello-World", actions=True)
 
@@ -152,7 +162,7 @@ async def test_actions_access_is_checked_when_requested(
 async def test_missing_actions_permission_is_reported(
     hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
 ) -> None:
-    entry = await _setup(hass, patch_session, REPO, FORBIDDEN)
+    entry = await _setup(hass, patch_session, NO_REPOS, REPO, FORBIDDEN)
 
     result = await _submit(hass, entry, "octocat/Hello-World", actions=True)
 
@@ -175,7 +185,7 @@ async def test_lookup_failures_are_reported(
     response: FakeResponse,
     error: str,
 ) -> None:
-    entry = await _setup(hass, patch_session, response)
+    entry = await _setup(hass, patch_session, NO_REPOS, response)
 
     result = await _submit(hass, entry, "octocat/missing")
 
@@ -203,7 +213,7 @@ async def test_a_duplicate_is_aborted_case_insensitively(
         unique_id="octocat/hello-world",
     )
     entry = await _setup(
-        hass, patch_session, SETUP_SNAPSHOT, REPO, subentries=[existing]
+        hass, patch_session, SETUP_SNAPSHOT, NO_REPOS, REPO, subentries=[existing]
     )
 
     result = await _submit(hass, entry, "OCTOCAT/hello-world")
@@ -254,10 +264,94 @@ async def test_the_actions_toggle_can_be_changed(
 async def test_adding_a_repository_reloads_the_entry(
     hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
 ) -> None:
-    entry = await _setup(hass, patch_session, REPO)
+    entry = await _setup(hass, patch_session, NO_REPOS, REPO)
     runtime_before = entry.runtime_data
 
     await _submit(hass, entry, "octocat/Hello-World")
     await hass.async_block_till_done()
 
     assert entry.runtime_data is not runtime_before
+
+
+async def test_the_list_offers_untracked_repositories_only(
+    hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
+) -> None:
+    existing = ConfigSubentryData(
+        data={CONF_REPOSITORY: "Octocat/Hello-World", CONF_ACTIONS: False},
+        subentry_type=SUBENTRY_REPOSITORY,
+        title="Octocat/Hello-World",
+        unique_id="octocat/hello-world",
+    )
+    entry = await _setup(
+        hass,
+        patch_session,
+        SETUP_SNAPSHOT,
+        _listing("Octocat/Hello-World", "Octocat/Spoon-Knife"),
+        subentries=[existing],
+    )
+
+    result = await _start(hass, entry)
+
+    selector = result["data_schema"].schema[CONF_REPOSITORIES]
+    assert selector.config["options"] == ["Octocat/Spoon-Knife"]
+    assert selector.config["custom_value"] is True
+
+
+async def test_several_repositories_are_added_at_once(
+    hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
+) -> None:
+    second = FakeResponse(
+        200,
+        {
+            "full_name": "Octocat/Spoon-Knife",
+            "default_branch": "main",
+            "private": True,
+            "archived": False,
+        },
+    )
+    entry = await _setup(hass, patch_session, NO_REPOS, REPO, second)
+
+    result = await _submit(
+        hass,
+        entry,
+        ["octocat/hello-world", "OCTOCAT/spoon-knife", "octocat/Hello-World"],
+    )
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert {s.data[CONF_REPOSITORY] for s in entry.subentries.values()} == {
+        "Octocat/Hello-World",
+        "Octocat/Spoon-Knife",
+    }
+
+
+async def test_a_failing_repository_blocks_the_batch_and_is_named(
+    hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
+) -> None:
+    entry = await _setup(hass, patch_session, NO_REPOS, REPO, NOT_FOUND)
+
+    result = await _submit(hass, entry, ["octocat/hello-world", "octocat/missing"])
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"base": "not_found"}
+    assert result["description_placeholders"] == {"repository": "octocat/missing"}
+    assert not entry.subentries
+
+
+async def test_an_empty_selection_is_rejected(
+    hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
+) -> None:
+    entry = await _setup(hass, patch_session, NO_REPOS)
+
+    result = await _submit(hass, entry, [])
+
+    assert result["errors"] == {"base": "no_repository"}
+
+
+async def test_typing_still_works_when_the_list_cannot_be_loaded(
+    hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
+) -> None:
+    entry = await _setup(hass, patch_session, FORBIDDEN, REPO)
+
+    result = await _submit(hass, entry, "octocat/hello-world")
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
