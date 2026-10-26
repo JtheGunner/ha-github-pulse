@@ -44,7 +44,16 @@ class _Session(FakeSession):
             return FakeResponse(
                 body=[{"assets": [{"download_count": 100}, {"download_count": 20}]}]
             )
-        return FakeResponse(body={"data": {"r0": RAW, "r1": None}})
+        return FakeResponse(
+            body={
+                "data": {
+                    "r0": RAW,
+                    "r1": None,
+                    "p0": {"issueCount": 6},
+                    "i0": {"issueCount": 9},
+                }
+            }
+        )
 
 
 async def _setup(
@@ -115,6 +124,8 @@ async def test_activity_sensors_are_on_by_default_and_count_all_authors(
 
     assert _state(hass, repo, "commits_this_month").state == "4"
     assert _state(hass, repo, "active_days_this_month").state == "3"
+    assert _state(hass, repo, "pull_requests_this_month").state == "6"
+    assert _state(hass, repo, "issues_this_month").state == "9"
     assert _state(hass, repo, "commits_vs_last_month").state == "100.0"
     last_year = _state(hass, repo, "commits_vs_last_year")
     assert last_year.state == "-50.0"
@@ -161,6 +172,8 @@ async def test_activity_sensors_are_unknown_without_a_default_branch(
     for key in (
         "commits_this_month",
         "active_days_this_month",
+        "pull_requests_this_month",
+        "issues_this_month",
         "commits_vs_last_month",
         "commits_vs_last_year",
     ):

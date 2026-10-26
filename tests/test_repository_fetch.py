@@ -79,10 +79,16 @@ RAW = {
 }
 
 
+SEARCH = {"p": {"issueCount": 6}, "i": {"issueCount": 9}}
+
+
 def _client(**by_alias: dict[str, Any] | None) -> Any:
     async def graphql(query: str, variables: Any = None) -> GraphQLResult:
         aliases = re.findall(r"(r\d+): repository", query)
-        return GraphQLResult({a: by_alias.get(a, RAW) for a in aliases}, [])
+        data = {a: by_alias.get(a, RAW) for a in aliases}
+        for alias in re.findall(r"([pi]\d+): search", query):
+            data[alias] = by_alias.get(alias, SEARCH[alias[0]])
+        return GraphQLResult(data, [])
 
     client = AsyncMock(spec=GitHubClient)
     client.graphql.side_effect = graphql
@@ -94,7 +100,8 @@ def test_query_has_an_alias_and_variables_per_repository() -> None:
 
     assert "r0: repository(owner: $o0, name: $n0)" in query
     assert "r1: repository(owner: $o1, name: $n1)" in query
-    assert variables == {"o0": "a", "n0": "b", "o1": "c", "n1": "d"}
+    assert (variables["o0"], variables["n0"]) == ("a", "b")
+    assert (variables["o1"], variables["n1"]) == ("c", "d")
 
 
 async def test_snapshot_reads_counts_ci_state_and_release_downloads() -> None:
@@ -224,6 +231,35 @@ async def test_the_query_asks_for_the_comparison_windows_in_the_same_request() -
     assert 'until: "2026-10-26T06:59:59Z"' in query
     assert 'previousMonth: history(since: "2026-09-01T07:00:00Z"' in query
     assert 'previousYear: history(since: "2025-10-01T07:00:00Z"' in query
+
+
+def test_the_query_counts_pull_requests_and_issues_created_this_month() -> None:
+    query, variables = build_query(["a/b"], TODAY, ZONE)
+
+    assert "p0: search(query: $p0, type: ISSUE, first: 1) { issueCount }" in query
+    assert "i0: search(query: $i0, type: ISSUE, first: 1) { issueCount }" in query
+    window = "created:2026-10-01T07:00:00Z..2026-10-26T06:59:59Z"
+    assert variables["p0"] == f"repo:a/b is:pr {window}"
+    assert variables["i0"] == f"repo:a/b is:issue {window}"
+
+
+async def test_snapshot_reads_the_pull_request_and_issue_counts() -> None:
+    result = await fetch_snapshots(_client(), ["a/b"], today=TODAY, zone=ZONE)
+
+    snapshot = result["a/b"]
+    assert snapshot is not None
+    assert (snapshot.pull_requests_this_month, snapshot.issues_this_month) == (6, 9)
+
+
+async def test_a_missing_search_result_leaves_the_counts_unknown() -> None:
+    result = await fetch_snapshots(
+        _client(p0=None, i0=None), ["a/b"], today=TODAY, zone=ZONE
+    )
+
+    snapshot = result["a/b"]
+    assert snapshot is not None
+    assert snapshot.pull_requests_this_month is None
+    assert snapshot.issues_this_month is None
 
 
 async def test_total_downloads_sum_every_release_asset() -> None:

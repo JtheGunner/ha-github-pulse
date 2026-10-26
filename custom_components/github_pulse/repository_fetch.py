@@ -87,6 +87,8 @@ class RepositorySnapshot:
     ci_state: str | None
     latest_release: ReleaseInfo | None
     activity: RepositoryActivity | None = None
+    pull_requests_this_month: int | None = None
+    issues_this_month: int | None = None
 
 
 def _history(alias: str, rng: DateRange, zone: ZoneInfo, *, nodes: bool) -> str:
@@ -111,12 +113,25 @@ def _history_fields(today: date, zone: ZoneInfo) -> str:
     )
 
 
+def _creation_queries(full_name: str, today: date, zone: ZoneInfo) -> tuple[str, str]:
+    """Return the search strings for pull requests and issues created this month."""
+    start, end = to_utc_window(month_to_date(today), zone)
+    created = f"created:{start:{_TIME}}..{end:{_TIME}}"
+    return (
+        f"repo:{full_name} is:pr {created}",
+        f"repo:{full_name} is:issue {created}",
+    )
+
+
 def build_query(
     repositories: Sequence[str], today: date, zone: ZoneInfo
 ) -> tuple[str, dict[str, str]]:
     """Return one query with a ``repository`` alias per name, plus its variables.
 
-    ``today`` and ``zone`` set the commit windows (see :class:`RepositoryActivity`).
+    ``today`` and ``zone`` set the commit windows (see :class:`RepositoryActivity`)
+    and the month of the pull request and issue counts. Those counts are
+    ``search`` aliases of the same request, so they cost GraphQL points but no
+    extra request.
     """
     fields = _FIELDS % {"history": _history_fields(today, zone)}
     declarations: list[str] = []
@@ -126,9 +141,16 @@ def build_query(
         owner, name = full_name.split("/")
         declarations += [f"$o{index}: String!", f"$n{index}: String!"]
         variables[f"o{index}"], variables[f"n{index}"] = owner, name
-        selections.append(
-            f"r{index}: repository(owner: $o{index}, name: $n{index}) {{ {fields} }}"
-        )
+        pulls, issues = _creation_queries(full_name, today, zone)
+        declarations += [f"$p{index}: String!", f"$i{index}: String!"]
+        variables[f"p{index}"], variables[f"i{index}"] = pulls, issues
+        selections += [
+            f"r{index}: repository(owner: $o{index}, name: $n{index}) {{ {fields} }}",
+            f"p{index}: search(query: $p{index}, type: ISSUE, first: 1) "
+            "{ issueCount }",
+            f"i{index}: search(query: $i{index}, type: ISSUE, first: 1) "
+            "{ issueCount }",
+        ]
     return f"query({', '.join(declarations)}) {{ {' '.join(selections)} }}", variables
 
 
@@ -171,10 +193,22 @@ def _activity(
     )
 
 
+def _issue_count(raw: dict[str, Any] | None) -> int | None:
+    return None if raw is None else raw["issueCount"]
+
+
 def parse_snapshot(
-    raw: dict[str, Any], today: date, zone: ZoneInfo
+    raw: dict[str, Any],
+    today: date,
+    zone: ZoneInfo,
+    *,
+    pull_requests: dict[str, Any] | None = None,
+    issues: dict[str, Any] | None = None,
 ) -> RepositorySnapshot:
-    """Turn one repository object of the response into a snapshot."""
+    """Turn one repository object of the response into a snapshot.
+
+    ``pull_requests`` and ``issues`` are the matching ``search`` results.
+    """
     branch = raw.get("defaultBranchRef") or {}
     commit = branch.get("target") or {}
     rollup = commit.get("statusCheckRollup") or {}
@@ -192,6 +226,8 @@ def parse_snapshot(
         ci_state=rollup.get("state"),
         latest_release=_release(raw.get("latestRelease")),
         activity=_activity(commit, today, zone),
+        pull_requests_this_month=_issue_count(pull_requests),
+        issues_this_month=_issue_count(issues),
     )
 
 
@@ -215,7 +251,15 @@ async def fetch_snapshots(
         for index, full_name in enumerate(batch):
             raw = response.data.get(f"r{index}")
             result[full_name] = (
-                None if raw is None else parse_snapshot(raw, today, zone)
+                None
+                if raw is None
+                else parse_snapshot(
+                    raw,
+                    today,
+                    zone,
+                    pull_requests=response.data.get(f"p{index}"),
+                    issues=response.data.get(f"i{index}"),
+                )
             )
     return result
 
