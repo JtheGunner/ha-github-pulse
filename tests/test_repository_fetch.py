@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import Any
 from unittest.mock import AsyncMock
+from zoneinfo import ZoneInfo
 
 from custom_components.github_pulse.api import GitHubClient, GraphQLResult
 from custom_components.github_pulse.api.query_validation import parse_query
@@ -37,6 +38,9 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from tests.fake_http import FakeResponse, FakeSession
 
+TODAY = date(2026, 10, 25)
+ZONE = ZoneInfo("America/Los_Angeles")
+
 RAW = {
     "nameWithOwner": "Octocat/Hello-World",
     "stargazerCount": 42,
@@ -51,6 +55,17 @@ RAW = {
         "target": {
             "committedDate": "2026-10-24T09:00:00Z",
             "statusCheckRollup": {"state": "FAILURE"},
+            "thisMonth": {
+                "totalCount": 4,
+                "nodes": [
+                    {"committedDate": "2026-10-24T09:00:00Z"},
+                    {"committedDate": "2026-10-24T18:00:00Z"},
+                    {"committedDate": "2026-10-20T10:00:00Z"},
+                    {"committedDate": "2026-10-02T10:00:00Z"},
+                ],
+            },
+            "previousMonth": {"totalCount": 2},
+            "previousYear": {"totalCount": 8},
         },
     },
     "latestRelease": {
@@ -75,7 +90,7 @@ def _client(**by_alias: dict[str, Any] | None) -> Any:
 
 
 def test_query_has_an_alias_and_variables_per_repository() -> None:
-    query, variables = build_query(["a/b", "c/d"])
+    query, variables = build_query(["a/b", "c/d"], TODAY, ZONE)
 
     assert "r0: repository(owner: $o0, name: $n0)" in query
     assert "r1: repository(owner: $o1, name: $n1)" in query
@@ -83,7 +98,9 @@ def test_query_has_an_alias_and_variables_per_repository() -> None:
 
 
 async def test_snapshot_reads_counts_ci_state_and_release_downloads() -> None:
-    result = await fetch_snapshots(_client(), ["Octocat/Hello-World"])
+    result = await fetch_snapshots(
+        _client(), ["Octocat/Hello-World"], today=TODAY, zone=ZONE
+    )
 
     snapshot = result["Octocat/Hello-World"]
     assert snapshot is not None
@@ -100,8 +117,9 @@ async def test_snapshot_reads_counts_ci_state_and_release_downloads() -> None:
 async def test_adding_a_repository_does_not_add_a_request() -> None:
     one, ten = _client(), _client()
 
-    await fetch_snapshots(one, ["a/r0"])
-    await fetch_snapshots(ten, [f"a/r{i}" for i in range(10)])
+    await fetch_snapshots(one, ["a/r0"], today=TODAY, zone=ZONE)
+    names = [f"a/r{i}" for i in range(10)]
+    await fetch_snapshots(ten, names, today=TODAY, zone=ZONE)
 
     assert one.graphql.await_count == ten.graphql.await_count == 1
 
@@ -109,7 +127,8 @@ async def test_adding_a_repository_does_not_add_a_request() -> None:
 async def test_very_long_lists_are_split_into_batches() -> None:
     client = _client()
 
-    result = await fetch_snapshots(client, [f"a/r{i}" for i in range(BATCH_SIZE + 1)])
+    names = [f"a/r{i}" for i in range(BATCH_SIZE + 1)]
+    result = await fetch_snapshots(client, names, today=TODAY, zone=ZONE)
 
     assert client.graphql.await_count == 2
     assert len(result) == BATCH_SIZE + 1
@@ -118,20 +137,93 @@ async def test_very_long_lists_are_split_into_batches() -> None:
 async def test_a_repository_without_release_or_ci_still_parses() -> None:
     bare = {**RAW, "defaultBranchRef": None, "latestRelease": None}
 
-    result = await fetch_snapshots(_client(r0=bare), ["a/b"])
+    result = await fetch_snapshots(_client(r0=bare), ["a/b"], today=TODAY, zone=ZONE)
 
     snapshot = result["a/b"]
     assert snapshot is not None
     assert snapshot.ci_state is None
     assert snapshot.latest_release is None
     assert snapshot.default_branch is None
+    assert snapshot.activity is None
 
 
 async def test_an_unreadable_repository_maps_to_none() -> None:
-    result = await fetch_snapshots(_client(r1=None), ["a/ok", "a/hidden"])
+    result = await fetch_snapshots(
+        _client(r1=None), ["a/ok", "a/hidden"], today=TODAY, zone=ZONE
+    )
 
     assert result["a/ok"] is not None
     assert result["a/hidden"] is None
+
+
+async def test_activity_counts_commits_and_active_days_of_all_authors() -> None:
+    result = await fetch_snapshots(
+        _client(), ["Octocat/Hello-World"], today=TODAY, zone=ZONE
+    )
+
+    activity = result["Octocat/Hello-World"].activity
+    assert activity is not None
+    assert activity.commits_this_month == 4
+    assert activity.commits_previous_month == 2
+    assert activity.commits_previous_year == 8
+    assert activity.active_days == 3
+    assert activity.elapsed_days == 25
+    assert activity.truncated is False
+
+
+async def test_active_days_follow_the_contribution_time_zone() -> None:
+    late = {
+        **RAW,
+        "defaultBranchRef": {
+            "name": "main",
+            "target": {
+                **RAW["defaultBranchRef"]["target"],
+                "thisMonth": {
+                    "totalCount": 2,
+                    "nodes": [
+                        {"committedDate": "2026-10-02T03:00:00Z"},
+                        {"committedDate": "2026-10-02T10:00:00Z"},
+                    ],
+                },
+            },
+        },
+    }
+
+    result = await fetch_snapshots(_client(r0=late), ["a/b"], today=TODAY, zone=ZONE)
+
+    # 03:00 UTC is still October 1st in Pacific time.
+    assert result["a/b"].activity.active_days == 2
+
+
+async def test_a_busy_month_is_flagged_as_truncated() -> None:
+    busy = {
+        **RAW,
+        "defaultBranchRef": {
+            "name": "main",
+            "target": {
+                **RAW["defaultBranchRef"]["target"],
+                "thisMonth": {
+                    "totalCount": 250,
+                    "nodes": [{"committedDate": "2026-10-24T09:00:00Z"}] * 100,
+                },
+            },
+        },
+    }
+
+    result = await fetch_snapshots(_client(r0=busy), ["a/b"], today=TODAY, zone=ZONE)
+
+    activity = result["a/b"].activity
+    assert activity.commits_this_month == 250
+    assert activity.truncated is True
+
+
+async def test_the_query_asks_for_the_comparison_windows_in_the_same_request() -> None:
+    query, _ = build_query(["a/b"], TODAY, ZONE)
+
+    assert 'thisMonth: history(since: "2026-10-01T07:00:00Z"' in query
+    assert 'until: "2026-10-26T06:59:59Z"' in query
+    assert 'previousMonth: history(since: "2026-09-01T07:00:00Z"' in query
+    assert 'previousYear: history(since: "2025-10-01T07:00:00Z"' in query
 
 
 async def test_total_downloads_sum_every_release_asset() -> None:

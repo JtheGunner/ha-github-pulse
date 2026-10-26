@@ -12,11 +12,12 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import EntityCategory, UnitOfTime
+from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfTime
 from homeassistant.util import dt as dt_util
 
+from .analytics.periods import percent_change
 from .repository_coordinator import GROUP_DOWNLOADS, GROUP_OVERVIEW
-from .repository_fetch import RepositorySnapshot
+from .repository_fetch import RepositoryActivity, RepositorySnapshot
 
 CI_STATES = ["success", "failure", "pending", "error", "expected"]
 
@@ -67,6 +68,44 @@ def _release_downloads(view: RepositoryView) -> int | None:
     return None if release is None else release.downloads
 
 
+def _commits_this_month(view: RepositoryView) -> int | None:
+    activity = view.snapshot.activity
+    return None if activity is None else activity.commits_this_month
+
+
+def _active_days(view: RepositoryView) -> int | None:
+    activity = view.snapshot.activity
+    return None if activity is None else activity.active_days
+
+
+def _active_days_attributes(view: RepositoryView) -> Attributes:
+    activity = view.snapshot.activity
+    return {} if activity is None else {"truncated": activity.truncated}
+
+
+def _baseline(activity: RepositoryActivity, *, year: bool) -> int:
+    return activity.commits_previous_year if year else activity.commits_previous_month
+
+
+def _change(view: RepositoryView, *, year: bool) -> float | None:
+    activity = view.snapshot.activity
+    if activity is None:
+        return None
+    change = percent_change(activity.commits_this_month, _baseline(activity, year=year))
+    return None if change is None else round(change, 1)
+
+
+def _change_attributes(view: RepositoryView, *, year: bool) -> Attributes:
+    activity = view.snapshot.activity
+    if activity is None:
+        return {}
+    return {
+        "commits": activity.commits_this_month,
+        "commits_in_comparison_span": _baseline(activity, year=year),
+        "elapsed_days": activity.elapsed_days,
+    }
+
+
 REPOSITORY_SENSORS: tuple[RepositorySensorDescription, ...] = (
     RepositorySensorDescription(
         key="stars",
@@ -91,6 +130,38 @@ REPOSITORY_SENSORS: tuple[RepositorySensorDescription, ...] = (
         translation_key="open_pull_requests",
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda view: view.snapshot.open_pull_requests,
+    ),
+    RepositorySensorDescription(
+        key="commits_this_month",
+        translation_key="commits_this_month",
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=_commits_this_month,
+    ),
+    RepositorySensorDescription(
+        key="active_days_this_month",
+        translation_key="active_days_this_month",
+        native_unit_of_measurement=UnitOfTime.DAYS,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=_active_days,
+        attributes_fn=_active_days_attributes,
+    ),
+    RepositorySensorDescription(
+        key="commits_vs_last_month",
+        translation_key="commits_vs_last_month",
+        native_unit_of_measurement=PERCENTAGE,
+        suggested_display_precision=1,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda view: _change(view, year=False),
+        attributes_fn=lambda view: _change_attributes(view, year=False),
+    ),
+    RepositorySensorDescription(
+        key="commits_vs_last_year",
+        translation_key="commits_vs_last_year",
+        native_unit_of_measurement=PERCENTAGE,
+        suggested_display_precision=1,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda view: _change(view, year=True),
+        attributes_fn=lambda view: _change_attributes(view, year=True),
     ),
     RepositorySensorDescription(
         key="latest_release",

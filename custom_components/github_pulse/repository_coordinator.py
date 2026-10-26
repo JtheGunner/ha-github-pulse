@@ -7,6 +7,7 @@ from collections.abc import Collection
 
 from homeassistant.config_entries import ConfigSubentry
 from homeassistant.core import HomeAssistant
+from homeassistant.util import dt as dt_util
 
 from .const import CONF_REPOSITORY, SUBENTRY_REPOSITORY
 from .coordinator import GitHubPulseCoordinator, GroupFetcher
@@ -56,6 +57,7 @@ class RepositoryCoordinator(GitHubPulseCoordinator):
     ) -> None:
         """Create the coordinator for the entry's tracked repositories."""
         self.repositories = tracked_repositories(config_entry)
+        self._zone = settings.contribution_time_zone
         groups: dict[str, GroupFetcher] = {
             GROUP_OVERVIEW: self._fetch_overview,
             GROUP_DOWNLOADS: self._fetch_downloads,
@@ -71,7 +73,12 @@ class RepositoryCoordinator(GitHubPulseCoordinator):
         )
 
     async def _fetch_overview(self) -> dict[str, RepositorySnapshot | None]:
-        return await fetch_snapshots(self.client, self.repositories)
+        return await fetch_snapshots(
+            self.client,
+            self.repositories,
+            today=dt_util.now(self._zone).date(),
+            zone=self._zone,
+        )
 
     async def _fetch_downloads(self) -> dict[str, int]:
         totals = await asyncio.gather(

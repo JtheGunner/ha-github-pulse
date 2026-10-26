@@ -64,7 +64,7 @@ The setup checks the token against every module you select and tells you what is
 | | Part | Entities |
 | --- | --- | --- |
 | 👤 | Profile | Contributions, commits and pull requests this month; change versus last month and last year (like for like); busiest month; current and longest streak; top language and language shift (estimated) |
-| 📁 | Repositories | One device per repository: stars, forks, open issues and pull requests, latest release, CI state of the default branch |
+| 📁 | Repositories | One device per repository: stars, forks, open issues and pull requests, latest release, CI state of the default branch; commits and active days this month and the change versus last month and last year (like for like), counting every author |
 | ⚙️ | Workflow runs | Per repository, if you turn on **Track workflow runs**: last result, runs today, queued runs, failure rate over 7 and 30 days, average duration, and a binary sensor while a workflow runs |
 | 🔔 | Events | Event entities per repository (workflow failed or recovered, release published) and for your account (review requested, pull request merged), also fired on the event bus |
 | 🧪 | Custom queries | Your own read-only GraphQL query as a sensor, added under **Add custom query**. Rendered with templates over `value_json`. Presets included; see the [guide](docs/custom-queries.md) |
