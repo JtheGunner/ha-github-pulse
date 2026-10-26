@@ -8,6 +8,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 - Adding repositories now offers a list of the most recently pushed repositories the token can read, with multi-select so several can be added at once. Typing a name still works, also when the list cannot be loaded.
 
+### Changed
+
+- New integration icon: a git branch-and-merge graph with a pulse ring.
+
 ### Fixed
 
 - Adding a custom query no longer makes the account's other entities disappear. The query sensor used the account device, which Home Assistant then moved into the query's subentry. Query sensors now have no device, and an affected account device is moved back on startup. New query entities are named without the "GitHub <login>" prefix; existing entity IDs are unchanged.
