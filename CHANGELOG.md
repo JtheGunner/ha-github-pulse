@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.1.0] - 2026-10-26
 
 ### Added
 
@@ -10,7 +10,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
-- New integration icon: a git branch-and-merge graph with a pulse ring.
+- New integration icon: a blue badge with a lion that has gear eyes.
 
 ### Fixed
 
