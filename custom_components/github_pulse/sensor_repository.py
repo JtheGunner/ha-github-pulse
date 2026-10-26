@@ -146,6 +146,18 @@ REPOSITORY_SENSORS: tuple[RepositorySensorDescription, ...] = (
         attributes_fn=_active_days_attributes,
     ),
     RepositorySensorDescription(
+        key="pull_requests_this_month",
+        translation_key="pull_requests_this_month",
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda view: view.snapshot.pull_requests_this_month,
+    ),
+    RepositorySensorDescription(
+        key="issues_this_month",
+        translation_key="issues_this_month",
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda view: view.snapshot.issues_this_month,
+    ),
+    RepositorySensorDescription(
         key="commits_vs_last_month",
         translation_key="commits_vs_last_month",
         native_unit_of_measurement=PERCENTAGE,
