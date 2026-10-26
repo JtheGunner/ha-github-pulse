@@ -10,6 +10,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ACCESS_TOKEN, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.typing import ConfigType
@@ -93,6 +94,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: GitHubPulseConfigEntry) 
         )
         await actions.async_config_entry_first_refresh()
         entry.runtime_data.actions = actions
+    _release_account_device(hass, entry)
     for subentry_id, subentry in query_subentries(entry):
         query = QueryCoordinator(hass, entry, subentry)
         await query.async_refresh()
@@ -101,6 +103,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: GitHubPulseConfigEntry) 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(_async_reload_on_change(entry)))
     return True
+
+
+def _release_account_device(hass: HomeAssistant, entry: GitHubPulseConfigEntry) -> None:
+    """Move the account device back out of any subentry.
+
+    Versions before 1.0.3 attached it to the subentry of a custom query, which
+    detached the profile sensors from it.
+    """
+    devices = dr.async_get(hass)
+    device = devices.async_get_device_by_identifier(
+        (DOMAIN, entry.entry_id), entry.entry_id
+    )
+    if device is not None and device.config_subentry_id is not None:
+        devices.async_update_device(
+            device.id,
+            new_config_entry_id=entry.entry_id,
+            new_config_subentry_id=None,
+        )
 
 
 def _async_reload_on_change(

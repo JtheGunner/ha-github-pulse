@@ -213,6 +213,9 @@ class QuerySensor(GitHubPulseEntity, SensorEntity):
         """Create the sensor for one custom query."""
         subentry = coordinator.subentry
         super().__init__(coordinator, f"query_{subentry.subentry_id}", GROUP_QUERY)
+        # The account device belongs to no subentry; sharing it would move it
+        # into this query's subentry and detach the profile sensors from it.
+        self._attr_device_info = None
         data = subentry.data
         self._attr_name = subentry.title
         self._attr_native_unit_of_measurement = data.get(CONF_UNIT) or None
