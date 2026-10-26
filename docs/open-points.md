@@ -1,22 +1,21 @@
-# Open points for discussion
+# Open points
 
-Collected during implementation; to be discussed at the end. Newest entries at the bottom.
+Status of the decisions collected during implementation.
 
-| # | Topic | Context | Needed from the maintainer |
-| --- | --- | --- | --- |
-| 1 | Initial commit on `main` | The repository was empty, so the first commit (license, `.gitignore`, concept document) went straight to `main`. All later work uses branches and pull requests. | Nothing, FYI. |
-| 2 | Fine-grained test token | The permission matrix cannot confirm whether GraphQL contributions work with a fine-grained PAT. | A fine-grained PAT (read-only, own repositories) for a one-off probe, if you want this verified before 0.1.0. |
-| 3 | `read:packages` scope | The Packages go/no-go (HGP-11) needs live download values. The `gh` token lacks this scope. | Run `gh auth refresh -s read:packages` (changes the scopes of the `gh` token) or provide a token, if the Packages module should be built. |
-| 4 | Local folder name | The working copy lives in `~/Projects/ha-github-insights` while the repository is `ha-github-pulse`. | Rename the folder when convenient; nothing in the project depends on it. |
-| 5 | Contribution time zone | GitHub buckets contribution days in Pacific Time by default. The integration therefore uses `America/Los_Angeles` unless changed in the options. | Your GitHub profile time zone, if you set one. |
-| 6 | Language estimate evidence | Only two single-language repositories were measured. | Optionally name a repository with a real language mix for a follow-up measurement. |
-| 7 | Minimum HA version raised to 2026.9.0 | HA replaced `voluptuous` by `probatio` in 2026.9 and removed `voluptuous` from its requirements. Importing `voluptuous` could fail on a real installation, so the integration uses `probatio`. This excludes users on older HA versions. | Confirm that 2026.9.0 as the minimum is acceptable. |
-8. **Streaks cover the last 365 days only.** The "longest streak" sensor is the longest run inside the contribution calendar window GitHub allows per request (one year), not an all-time record. Decide whether to label it "longest streak (last year)" or to compute all-time from the stored history later.
-9. **No end-to-end test against a real Home Assistant and a real GitHub token.** All tests use scripted HTTP responses. Release 0.1.0 is tagged and passes CI (test, hassfest, hacs), but the HACS custom-repository install and a live run have not been verified by me. Please install 0.1.0 once and report anything odd, especially the first backfill and the repository subentry flow.
-10. **Actions billing minutes are not implemented.** The ticket asks for an optional billing sensor (classic `user` scope). GitHub is replacing the legacy billing endpoints and the probe in `docs/permission-matrix.md` returned 404 for the account used, so I could not verify a working endpoint. Decide whether it is worth adding once a token with the right scope can be tested.
-11. **Release 1.0.0 is prepared but not tagged.** The manifest, changelog and README are on `main` at 1.0.0 (PR 38). Creating the public GitHub release `v1.0.0` was not permitted in this session, so the tag and release notes are still to do. Run `gh release create v1.0.0 --target main --title 1.0.0 --notes-file <notes>` or create the release in the GitHub UI.
-12. **Packages module (HGP-51) was not built.** The go/no-go is "conditional go" (item 3): the download fields exist, but nobody has seen live values and the token needs the classic `read:packages` scope. Building against an unverified response shape risks shipping something broken. Decide whether to provide a token for a probe, or close the ticket as won't fix and keep the limitation documented.
-13. **HACS default list.** The repository passes the HACS validation. Submitting it to the default HACS list is a public step that is yours to take; it makes sense after item 9 (a live install) is verified.
-14. **`graphql-core` is a new runtime requirement.** Home Assistant constrains it to `<3.3`, so the manifest pins 3.2.6. It is only used to parse custom queries and to reject mutations.
-15. **Year in review pulls in three data groups.** Enabling that sensor also enables the history, language and calendar groups (extra API calls). The `year_in_review` service reports `missing_groups` when it runs without them.
-16. **Rhythm and work-in-progress figures are approximate.** They rely on GitHub's last 300 events and the search API (50 merged pull requests, 14 days for "stale"). The thresholds are constants; say if you want them as options.
+| # | Topic | Status |
+| --- | --- | --- |
+| 1 | Initial commit on `main` | Closed. The first commit went straight to `main`; all later work uses branches and pull requests. |
+| 2 | Fine-grained test token | Open, optional. A read-only fine-grained token would confirm that GraphQL contributions work with it. |
+| 3, 12 | Packages module (HGP-51) | Won't fix. GitHub's REST API returns package names and versions but no download counts. |
+| 4 | Local folder name | Open, cosmetic. The working copy is `ha-github-insights`, the repository is `ha-github-pulse`. |
+| 5 | Contribution time zone | Closed. The owner's profile uses `Europe/Zurich`; set it as the contribution time zone in the options. The default stays `America/Los_Angeles`, which is what GitHub uses without a profile setting. |
+| 6 | Language estimate evidence | Open, optional. Only two single-language repositories were measured. |
+| 7 | Minimum Home Assistant 2026.9.0 | Closed. Required because HA replaced `voluptuous` by `probatio`. |
+| 8 | Streaks cover 365 days | Closed. The sensor is named "Longest streak (last year)". An all-time value could come from the stored history later. |
+| 9 | No live end-to-end test | Partly closed. HACS install and setup were verified by the owner; the first backfill and the repository subentry flow still need a report. |
+| 10 | Actions billing minutes | Won't do. The legacy billing endpoint returns 404 and is being replaced. |
+| 11 | Release 1.0.0 | Closed. Released as 1.0.0 and 1.0.1. |
+| 13 | HACS default list | Open. Submit after one or two weeks of live use; the owner triggers it. |
+| 14 | `graphql-core` requirement | Closed. Pinned to 3.2.6 because Home Assistant constrains it below 3.3. |
+| 15 | Year in review data groups | Closed. Enabling the sensor also enables the history, language and calendar groups. |
+| 16 | Rhythm and work-in-progress thresholds | Closed. They stay constants until there is concrete demand for options. |
