@@ -102,7 +102,7 @@ class GitHubClient:
         self.budget = budget or RateBudget()
         self._sleep = sleep
         self._max_retries = max_retries
-        self._etag_cache: dict[str, tuple[str, Any]] = {}
+        self._etag_cache: dict[str, tuple[str, Any, Mapping[str, str]]] = {}
 
     async def rest_get(
         self, path: str, params: Mapping[str, str] | None = None
@@ -117,9 +117,9 @@ class GitHubClient:
 
         raw = await self._request("GET", url, headers=headers, params=params)
         if raw.status == HTTPStatus.NOT_MODIFIED and cached:
-            return RestResponse(cached[1], raw.headers, from_cache=True)
+            return RestResponse(cached[1], cached[2], from_cache=True)
         if etag := raw.headers.get("ETag"):
-            self._etag_cache[cache_key] = (etag, raw.body)
+            self._etag_cache[cache_key] = (etag, raw.body, raw.headers)
         return RestResponse(raw.body, raw.headers)
 
     async def rest_get_pages(

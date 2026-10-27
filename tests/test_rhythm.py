@@ -94,6 +94,26 @@ async def test_event_times_are_read_from_up_to_three_pages() -> None:
     )
 
 
+async def test_event_times_stay_complete_when_the_feed_is_not_modified() -> None:
+    first_page = {
+        "ETag": "p1",
+        "Link": '<https://api.github.com/users/octocat/events?page=2>; rel="next"',
+    }
+    session = FakeSession(
+        FakeResponse(200, [{"created_at": "2026-10-10T08:15:00Z"}], first_page),
+        FakeResponse(200, [{"created_at": "2026-10-10T09:45:00Z"}], {"ETag": "p2"}),
+        FakeResponse(304, None, {"ETag": "p1"}),
+        FakeResponse(304, None, {"ETag": "p2"}),
+    )
+    client = GitHubClient(session, "token")  # type: ignore[arg-type]
+
+    first = await fetch_event_times(client, "octocat")
+    second = await fetch_event_times(client, "octocat")
+
+    assert first == second
+    assert len(second) == 2
+
+
 class _EventsSession(FakeSession):
     def request(self, method: str, url: str, **kwargs: Any) -> FakeResponse:
         if url.endswith("/users/octocat/events"):
