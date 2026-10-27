@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.2.2] - 2026-10-27
+
+### Fixed
+
+- The most active hour and night owl score sensors no longer alternate between two values. Paginated GitHub responses that were answered with `304 Not Modified` lost their link to the next page, so every other refresh analysed only the newest 100 events instead of 300.
+
 ## [1.2.1] - 2026-10-27
 
 ### Changed
