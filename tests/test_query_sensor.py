@@ -256,3 +256,53 @@ async def test_an_account_device_moved_into_a_subentry_is_released_on_setup(
     await hass.async_block_till_done()
 
     assert _account_device(hass, entry).config_subentry_id is None
+
+
+async def test_a_new_query_entity_id_carries_the_account_prefix(
+    hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
+) -> None:
+    await _setup(hass, patch_session, RESULT)
+
+    assert _entity_id(hass) == "sensor.github_octocat_repository_count"
+    state = hass.states.get(_entity_id(hass))
+    assert state is not None
+    assert state.attributes["friendly_name"] == "Repository count"
+
+
+async def test_an_existing_query_entity_keeps_its_entity_id(
+    hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
+) -> None:
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id="octocat",
+        data={
+            CONF_ACCESS_TOKEN: "token",
+            CONF_OWNER: "octocat",
+            CONF_TOKEN_TYPE: "classic",
+            CONF_MODULES: ["repositories"],
+        },
+        subentries_data=[
+            ConfigSubentryData(
+                subentry_type=SUBENTRY_QUERY,
+                title="Repository count",
+                unique_id="repository count",
+                data=_data(),
+            )
+        ],
+    )
+    entry.add_to_hass(hass)
+    subentry_id = next(iter(entry.subentries))
+    er.async_get(hass).async_get_or_create(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_query_{subentry_id}",
+        suggested_object_id="repository_count",
+        config_entry=entry,
+        config_subentry_id=subentry_id,
+    )
+    patch_session(FakeSession(RESULT))
+
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert _entity_id(hass) == "sensor.repository_count"
