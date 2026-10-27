@@ -10,6 +10,8 @@ Turn any read-only GitHub GraphQL query into a sensor. Open the integration, cho
    - **State template**: must render a single value (a number or text of at most 255 characters).
    - **Attributes template** (optional): must render a mapping.
 
+The sensor shows the query's name, and its entity ID carries the same prefix as the account's other entities: a query named "Followers" for the login `octocat` becomes `sensor.github_octocat_followers`. Queries created before this convention keep their entity ID; rename one in **Settings → Devices & services → Entities** if you want it to match.
+
 Before saving, the flow runs the query once and shows the raw result and the rendered state, so mistakes show up while you are still in the form.
 
 ## Variables

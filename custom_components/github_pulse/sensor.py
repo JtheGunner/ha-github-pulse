@@ -225,6 +225,12 @@ class QuerySensor(GitHubPulseEntity, SensorEntity):
             self._attr_state_class = SensorStateClass(state_class)
 
     @property
+    def suggested_object_id(self) -> str:
+        """Return the entity ID base, prefixed like the account's other entities."""
+        login = self.coordinator.config_entry.runtime_data.login
+        return f"GitHub {login} {self.coordinator.subentry.title}"
+
+    @property
     def native_value(self) -> StateType:
         """Return the rendered state."""
         outcome = self.coordinator.outcome()
