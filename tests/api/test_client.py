@@ -226,6 +226,43 @@ async def test_pagination_follows_next_links() -> None:
     assert session.requests[1].url == "https://api.github.com/x?page=2"
 
 
+async def test_304_keeps_the_link_header_of_the_cached_response() -> None:
+    link = {
+        "ETag": 'W/"abc"',
+        "Link": '<https://api.github.com/x?page=2>; rel="next"',
+    }
+    client, _ = _client(
+        FakeResponse(200, [1], link),
+        FakeResponse(304, None, {"ETag": 'W/"abc"'}),
+    )
+
+    await client.rest_get("/x")
+    second = await client.rest_get("/x")
+
+    assert second.from_cache
+    assert second.next_url == "https://api.github.com/x?page=2"
+
+
+async def test_pagination_returns_every_page_when_all_pages_are_not_modified() -> None:
+    page_1 = {
+        "ETag": "p1",
+        "Link": '<https://api.github.com/x?page=2>; rel="next"',
+    }
+    page_2 = {"ETag": "p2"}
+    client, session = _client(
+        FakeResponse(200, [1, 2], page_1),
+        FakeResponse(200, [3], page_2),
+        FakeResponse(304, None, {"ETag": "p1"}),
+        FakeResponse(304, None, {"ETag": "p2"}),
+    )
+
+    first = await client.rest_get_pages("/x")
+    second = await client.rest_get_pages("/x")
+
+    assert first == second == [1, 2, 3]
+    assert len(session.requests) == 4
+
+
 async def test_pagination_respects_max_pages() -> None:
     link = {"Link": '<https://api.github.com/x?page=2>; rel="next"'}
     client, session = _client(
