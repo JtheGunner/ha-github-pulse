@@ -78,6 +78,9 @@ The setup checks the token against every module you select and tells you what is
 
 Everything marked optional is created disabled. GitHub Pulse only fetches data that an enabled entity needs, so unused sensors cost no API calls.
 
+> [!NOTE]
+> On the integration page, your account's device (for example **GitHub octocat**) appears under **Devices that don't belong to a sub-entry**. That heading comes from Home Assistant: the profile entities belong to the account itself, while repositories and custom queries are sub-entries. Nothing is misconfigured.
+
 ### 🛎️ Services
 
 | Service                       | Purpose                                                                                                                                                                |
