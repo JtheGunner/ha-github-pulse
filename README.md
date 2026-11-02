@@ -15,7 +15,7 @@
 [![License](https://img.shields.io/badge/license-MIT-22c55e?style=flat-square)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.14-3776ab?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![Home Assistant](https://img.shields.io/badge/home%20assistant-2026.9%2B-0ea5e9?style=flat-square&logo=homeassistant&logoColor=white)](https://www.home-assistant.io/)
-[![HACS](https://img.shields.io/badge/HACS-custom-8b5cf6?style=flat-square)](https://hacs.xyz/)
+[![HACS](https://img.shields.io/badge/HACS-default-8b5cf6?style=flat-square)](https://hacs.xyz/)
 [![Status](https://img.shields.io/badge/status-stable-22c55e?style=flat-square)](CHANGELOG.md)
 
 </div>
@@ -39,13 +39,26 @@ You choose which parts to enable. That also decides which access token permissio
 
 ## 📥 Installation
 
-1. In HACS, open the menu → **Custom repositories**, add `https://github.com/JtheGunner/ha-github-pulse` as an **Integration**.
-2. Install **GitHub Pulse** and restart Home Assistant.
+1. In HACS, search for **GitHub Pulse** and download it.
+2. Restart Home Assistant.
 3. Go to **Settings → Devices & services → Add integration → GitHub Pulse**.
 4. Paste a personal access token and choose the modules you want.
 5. Use **Add repository** to pick one or more repositories from a list of those your token can read, or type `owner/name`.
 
 Requires Home Assistant 2026.9 or newer.
+
+[![Open your Home Assistant instance and open this repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=JtheGunner&repository=ha-github-pulse&category=integration)
+
+<details>
+<summary>Fallback: add it as a custom repository</summary>
+
+If GitHub Pulse does not show up in the HACS search:
+
+1. Open **HACS → ⋮ → Custom repositories**.
+2. Add `https://github.com/JtheGunner/ha-github-pulse` with the category **Integration**.
+3. Install **GitHub Pulse** and restart Home Assistant.
+
+</details>
 
 ---
 

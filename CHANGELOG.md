@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.2.3] - 2026-11-02
+
+### Changed
+
+- The README describes the installation through the HACS search instead of a custom repository. Adding the repository by hand stays documented as a fallback.
+
 ## [1.2.2] - 2026-10-27
 
 ### Fixed
