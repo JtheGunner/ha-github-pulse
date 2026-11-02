@@ -47,8 +47,18 @@ You choose which parts to enable. That also decides which access token permissio
 
 Requires Home Assistant 2026.9 or newer.
 
-> [!TIP]
-> If GitHub Pulse does not show up in the HACS search, add it by hand: in HACS, open the menu → **Custom repositories**, enter `https://github.com/JtheGunner/ha-github-pulse` and choose **Integration**.
+[![Open your Home Assistant instance and open this repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=JtheGunner&repository=ha-github-pulse&category=integration)
+
+<details>
+<summary>Fallback: add it as a custom repository</summary>
+
+If GitHub Pulse does not show up in the HACS search:
+
+1. Open **HACS → ⋮ → Custom repositories**.
+2. Add `https://github.com/JtheGunner/ha-github-pulse` with the category **Integration**.
+3. Install **GitHub Pulse** and restart Home Assistant.
+
+</details>
 
 ---
 
