@@ -45,6 +45,9 @@ async def test_diagnostics_redact_token_and_account(
                     "repository": "octocat/hello",
                     "query": '{ user(login: "octocat") { id } }',
                     "variables": "login: octocat",
+                    "name": "octocat issues",
+                    "state_template": "{{ value }} for octocat",
+                    "attributes_template": "{{ {'who': 'octocat'} }}",
                 },
             )
         ],
