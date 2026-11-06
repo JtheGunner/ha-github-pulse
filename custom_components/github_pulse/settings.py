@@ -6,7 +6,11 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+from zoneinfo import ZoneInfo
+
+from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryError
+from homeassistant.util import dt as dt_util
 
 from .const import (
     CONF_CONTRIBUTION_TIME_ZONE,
@@ -39,8 +43,18 @@ class Settings:
     import_statistics: bool
 
     @classmethod
-    def from_options(cls, options: Mapping[str, Any]) -> Settings:
-        """Build settings from stored options; missing or invalid values fall back."""
+    async def async_from_options(
+        cls, hass: HomeAssistant, options: Mapping[str, Any]
+    ) -> Settings:
+        """Build settings from stored options; missing or invalid values fall back.
+
+        The time zone is resolved through Home Assistant so that reading the
+        tz database never blocks the event loop.
+        """
+        zone = await _async_zone(
+            hass,
+            options.get(CONF_CONTRIBUTION_TIME_ZONE, DEFAULT_CONTRIBUTION_TIME_ZONE),
+        )
         return cls(
             profile_interval=timedelta(
                 minutes=options.get(CONF_PROFILE_INTERVAL, DEFAULT_PROFILE_INTERVAL)
@@ -51,9 +65,7 @@ class Settings:
                 )
             ),
             history_years=int(options.get(CONF_HISTORY_YEARS, DEFAULT_HISTORY_YEARS)),
-            contribution_time_zone=_zone(
-                options.get(CONF_CONTRIBUTION_TIME_ZONE, DEFAULT_CONTRIBUTION_TIME_ZONE)
-            ),
+            contribution_time_zone=zone,
             include_restricted=bool(
                 options.get(CONF_INCLUDE_RESTRICTED, DEFAULT_INCLUDE_RESTRICTED)
             ),
@@ -66,17 +78,24 @@ class Settings:
         )
 
 
-def is_valid_time_zone(name: str) -> bool:
-    """Return whether the name is a known IANA time zone."""
+async def async_resolve_time_zone(hass: HomeAssistant, name: str) -> ZoneInfo | None:
+    """Return the IANA time zone, or None for an unknown name."""
     try:
-        ZoneInfo(name)
-    except ZoneInfoNotFoundError, ValueError, OSError:
-        return False
-    return True
+        zone = await dt_util.async_get_time_zone(name)
+    except ValueError, OSError:
+        return None
+    return zone if isinstance(zone, ZoneInfo) else None
 
 
-def _zone(name: str) -> ZoneInfo:
-    """Return the zone, falling back to the default for an unknown name."""
-    if is_valid_time_zone(name):
-        return ZoneInfo(name)
-    return ZoneInfo(DEFAULT_CONTRIBUTION_TIME_ZONE)
+async def _async_zone(hass: HomeAssistant, name: str) -> ZoneInfo:
+    """Return the zone, falling back to the default for an unknown name.
+
+    Raises ConfigEntryError when not even the default zone can be loaded,
+    which means the tz database of the host is unusable.
+    """
+    for candidate in (name, DEFAULT_CONTRIBUTION_TIME_ZONE):
+        if zone := await async_resolve_time_zone(hass, candidate):
+            return zone
+    raise ConfigEntryError(
+        f"Time zone database is unavailable (tried {DEFAULT_CONTRIBUTION_TIME_ZONE})"
+    )

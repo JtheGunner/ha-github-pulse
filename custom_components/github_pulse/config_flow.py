@@ -66,7 +66,7 @@ from .const import (
 )
 from .query_flow import QuerySubentryFlow
 from .repository_flow import RepositorySubentryFlow
-from .settings import is_valid_time_zone
+from .settings import async_resolve_time_zone
 
 TOKENS_URL = "https://github.com/settings/tokens"
 DOCS_URL = (
@@ -374,7 +374,9 @@ class GitHubPulseOptionsFlow(OptionsFlow):
         errors: dict[str, str] = {}
 
         if user_input is not None:
-            if not is_valid_time_zone(user_input[CONF_CONTRIBUTION_TIME_ZONE]):
+            if not await async_resolve_time_zone(
+                self.hass, user_input[CONF_CONTRIBUTION_TIME_ZONE]
+            ):
                 errors[CONF_CONTRIBUTION_TIME_ZONE] = "invalid_time_zone"
             else:
                 return self.async_create_entry(

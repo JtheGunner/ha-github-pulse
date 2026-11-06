@@ -30,7 +30,6 @@ from .api.query_validation import (
 from .const import DOMAIN
 from .custom_query import QueryRenderError, resolve_variables
 from .models import GitHubPulseConfigEntry
-from .settings import Settings
 
 SERVICE_QUERY = "query"
 ATTR_CONFIG_ENTRY_ID = "config_entry_id"
@@ -81,7 +80,7 @@ async def _async_query(call: ServiceCall, entry_lookup: EntryLookup) -> ServiceR
         raise ServiceValidationError(
             translation_domain=DOMAIN, translation_key="budget_low"
         )
-    zone = Settings.from_options(entry.options).contribution_time_zone
+    zone = entry.runtime_data.settings.contribution_time_zone
     try:
         parsed = parse_query(call.data[ATTR_QUERY])
         variables = resolve_variables(
