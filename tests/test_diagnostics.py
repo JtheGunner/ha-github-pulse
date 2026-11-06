@@ -41,7 +41,11 @@ async def test_diagnostics_redact_token_and_account(
                 subentry_type="unrelated",
                 title="octocat/hello",
                 unique_id="octocat/hello",
-                data={},
+                data={
+                    "repository": "octocat/hello",
+                    "query": '{ user(login: "octocat") { id } }',
+                    "variables": "login: octocat",
+                },
             )
         ],
     )

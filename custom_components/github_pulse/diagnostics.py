@@ -8,12 +8,21 @@ from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.const import CONF_ACCESS_TOKEN
 from homeassistant.core import HomeAssistant
 
-from .const import CONF_OWNER
+from .const import CONF_OWNER, CONF_QUERY, CONF_QUERY_VARIABLES, CONF_REPOSITORY
 from .models import GitHubPulseConfigEntry
 
-# The GitHub login appears in the title, the unique ID and the owner, so all
-# of them are redacted along with the token.
-TO_REDACT = {CONF_ACCESS_TOKEN, CONF_OWNER, "title", "unique_id"}
+# The GitHub login appears in the title, the unique ID and the owner, and may
+# appear in the repository names and in the query text and variables of the
+# subentries, so all of them are redacted along with the token.
+TO_REDACT = {
+    CONF_ACCESS_TOKEN,
+    CONF_OWNER,
+    CONF_REPOSITORY,
+    CONF_QUERY,
+    CONF_QUERY_VARIABLES,
+    "title",
+    "unique_id",
+}
 
 
 async def async_get_config_entry_diagnostics(
