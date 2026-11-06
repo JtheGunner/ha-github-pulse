@@ -20,7 +20,6 @@ from .custom_query import (
 )
 from .models import GitHubPulseConfigEntry
 from .query_flow import QueryFormError, definition_from, parse_user_variables
-from .settings import Settings
 
 GROUP_QUERY = "query"
 
@@ -66,7 +65,7 @@ class QueryCoordinator(GitHubPulseCoordinator):
         """
         data = dict(self.subentry.data)
         entry = self.config_entry
-        zone = Settings.from_options(entry.options).contribution_time_zone
+        zone = entry.runtime_data.settings.contribution_time_zone
         try:
             parsed = parse_query(data[CONF_QUERY])
             today = datetime.now(zone).date()

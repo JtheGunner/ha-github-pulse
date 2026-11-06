@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from homeassistant.config_entries import ConfigEntry
 
 from .api import GitHubClient
+from .settings import Settings
 
 if TYPE_CHECKING:
     from .actions_coordinator import ActionsCoordinator
@@ -24,6 +25,7 @@ class GitHubPulseData:
     client: GitHubClient
     login: str
     modules: frozenset[str]
+    settings: Settings
     profile: ProfileCoordinator | None = None
     repositories: RepositoryCoordinator | None = None
     actions: ActionsCoordinator | None = None

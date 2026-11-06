@@ -54,7 +54,6 @@ from .custom_query import (
 from .models import GitHubPulseConfigEntry
 from .query_presets import CUSTOM, PRESETS_BY_KEY, QueryPreset
 from .repository_flow import error_code
-from .settings import Settings
 
 CONF_PRESET = "preset"
 NONE_CHOICE = "none"
@@ -271,7 +270,7 @@ class QuerySubentryFlow(ConfigSubentryFlow):
     async def _validate(self, user_input: dict[str, Any]) -> QueryPreview:
         entry: GitHubPulseConfigEntry = self._get_entry()
         client = entry.runtime_data.client
-        zone = Settings.from_options(entry.options).contribution_time_zone
+        zone = entry.runtime_data.settings.contribution_time_zone
         try:
             parsed = parse_query(user_input[CONF_QUERY])
         except QueryValidationError as err:

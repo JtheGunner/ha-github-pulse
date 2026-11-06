@@ -53,12 +53,14 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 async def async_setup_entry(hass: HomeAssistant, entry: GitHubPulseConfigEntry) -> bool:
     """Set up GitHub Pulse from a config entry."""
+    settings = await Settings.async_from_options(hass, entry.options)
     entry.runtime_data = GitHubPulseData(
         client=GitHubClient(
             async_get_clientsession(hass), entry.data[CONF_ACCESS_TOKEN]
         ),
         login=entry.data[CONF_OWNER],
         modules=frozenset(entry.data[CONF_MODULES]),
+        settings=settings,
     )
     if MODULE_PROFILE in entry.runtime_data.modules:
         history = HistoryStore(hass, entry.entry_id)
@@ -68,7 +70,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: GitHubPulseConfigEntry) 
         profile = ProfileCoordinator(
             hass,
             entry,
-            settings=Settings.from_options(entry.options),
+            settings=settings,
             history=history,
             languages=languages,
             active_groups=_profile_groups(hass, entry),
@@ -81,7 +83,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: GitHubPulseConfigEntry) 
         repositories = RepositoryCoordinator(
             hass,
             entry,
-            settings=Settings.from_options(entry.options),
+            settings=settings,
             active_groups=_repository_groups(hass, entry),
         )
         await repositories.async_config_entry_first_refresh()
