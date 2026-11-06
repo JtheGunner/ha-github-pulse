@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.2.4] - 2026-11-06
+
+### Fixed
+
+- The contribution time zone is resolved once during setup through Home Assistant instead of being read from disk on the event loop. The options form validates it the same way.
+- Diagnostics no longer contain the GitHub account name: the entry title, unique ID, owner, repository names, and the name, query, variables and templates of custom queries are redacted.
+
 ## [1.2.3] - 2026-11-02
 
 ### Changed
