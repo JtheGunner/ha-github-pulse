@@ -93,6 +93,12 @@
   },
   "entity": {
     "sensor": {
+      "followers": {
+        "name": "Follower"
+      },
+      "following": {
+        "name": "Gefolgte Nutzer"
+      },
       "contributions_this_month": {
         "name": "Beiträge diesen Monat"
       },
