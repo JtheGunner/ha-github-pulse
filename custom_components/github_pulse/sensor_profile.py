@@ -29,6 +29,7 @@ from .profile_coordinator import (
     GROUP_LANGUAGES,
     GROUP_RHYTHM,
     GROUP_SEARCH,
+    GROUP_SOCIAL,
     GROUP_WIP,
     CurrentPeriods,
 )
@@ -81,6 +82,11 @@ class ProfileView:
     def daily(self) -> Mapping[date, int]:
         """Return the contribution calendar group."""
         return self.data[GROUP_CALENDAR]  # type: ignore[no-any-return]
+
+    @property
+    def social(self) -> Mapping[str, int]:
+        """Return the follower and following counts."""
+        return self.data[GROUP_SOCIAL]  # type: ignore[no-any-return]
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -449,5 +455,21 @@ PROFILE_SENSORS: tuple[ProfileSensorDescription, ...] = (
         entity_registry_enabled_default=False,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda view: view.search.authored_open,
+    ),
+    ProfileSensorDescription(
+        key="followers",
+        translation_key="followers",
+        group=GROUP_SOCIAL,
+        entity_registry_enabled_default=False,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda view: view.social["followers"],
+    ),
+    ProfileSensorDescription(
+        key="following",
+        translation_key="following",
+        group=GROUP_SOCIAL,
+        entity_registry_enabled_default=False,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda view: view.social["following"],
     ),
 )

@@ -56,7 +56,7 @@ Any other declared variable needs a value in the **Variables** field, written as
 | Pull requests this month | Pull requests this month |
 | Contributions this year | |
 | Public repositories | |
-| Followers | |
+| Followers | Followers |
 
 ## One-off queries
 
