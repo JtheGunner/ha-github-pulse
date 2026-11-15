@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- Optional **Followers** and **Following** sensors for your account. They are disabled by default and fetch nothing until you enable one.
+
 ## [1.2.4] - 2026-11-06
 
 ### Fixed
