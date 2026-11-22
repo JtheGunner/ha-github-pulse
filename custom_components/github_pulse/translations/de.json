@@ -193,6 +193,33 @@
       "last_push": {
         "name": "Letzter Push"
       },
+      "unique_visitors_14d": {
+        "name": "Eindeutige Besucher (14 Tage)"
+      },
+      "views_14d": {
+        "name": "Seitenaufrufe (14 Tage)"
+      },
+      "unique_cloners_14d": {
+        "name": "Eindeutige Cloner (14 Tage)"
+      },
+      "clones_14d": {
+        "name": "Clones (14 Tage)"
+      },
+      "peak_visitor_day": {
+        "name": "Spitzentag der Besucher"
+      },
+      "top_referrer": {
+        "name": "Top-Referrer"
+      },
+      "top_path": {
+        "name": "Top-Seite"
+      },
+      "visitor_trend": {
+        "name": "Besucher-Trend"
+      },
+      "clone_visitor_ratio": {
+        "name": "Cloner pro Besucher"
+      },
       "review_requests": {
         "name": "Pull Requests, die auf mein Review warten"
       },

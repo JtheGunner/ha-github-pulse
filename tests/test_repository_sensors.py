@@ -245,3 +245,155 @@ async def test_enabling_the_downloads_sensor_fetches_that_group(
 
     assert hass.states.get(total.entity_id).state == "120"
     assert hass.states.get(days.entity_id).state == "1"
+
+
+TRAFFIC_VIEWS = {
+    "count": 27,
+    "uniques": 12,
+    "views": [
+        {"timestamp": "2026-10-14T00:00:00Z", "count": 8, "uniques": 6},
+        {"timestamp": "2026-10-20T00:00:00Z", "count": 10, "uniques": 7},
+        {"timestamp": "2026-10-22T00:00:00Z", "count": 9, "uniques": 7},
+    ],
+}
+TRAFFIC_CLONES = {"count": 30, "uniques": 6, "clones": []}
+TRAFFIC_REFERRERS = [
+    {"referrer": "Google", "count": 20, "uniques": 9},
+    {"referrer": "github.com", "count": 7, "uniques": 3},
+]
+TRAFFIC_PATHS = [
+    {"path": "/Octocat/Hello-World", "title": "Hello", "count": 22, "uniques": 10}
+]
+TRAFFIC_KEYS = (
+    "unique_visitors_14d",
+    "views_14d",
+    "unique_cloners_14d",
+    "clones_14d",
+    "peak_visitor_day",
+    "top_referrer",
+    "top_path",
+    "visitor_trend",
+    "clone_visitor_ratio",
+)
+
+
+class _TrafficSession(_Session):
+    """Also answer the traffic endpoints, or refuse them, and record the paths."""
+
+    def __init__(self, *, forbidden: bool = False) -> None:
+        super().__init__()
+        self.traffic_urls: list[str] = []
+        self._forbidden = forbidden
+
+    def request(self, method: str, url: str, **kwargs: Any) -> FakeResponse:
+        if "/traffic/" not in url:
+            return super().request(method, url, **kwargs)
+        self.traffic_urls.append(url)
+        if self._forbidden:
+            return FakeResponse(
+                status=403, body={"message": "Resource not accessible by integration"}
+            )
+        bodies = {
+            "/traffic/views": TRAFFIC_VIEWS,
+            "/traffic/clones": TRAFFIC_CLONES,
+            "/traffic/popular/referrers": TRAFFIC_REFERRERS,
+            "/traffic/popular/paths": TRAFFIC_PATHS,
+        }
+        return FakeResponse(body=next(b for p, b in bodies.items() if p in url))
+
+
+async def _setup_traffic(
+    hass: HomeAssistant,
+    patch_session: Callable[[FakeSession], None],
+    session: _TrafficSession,
+    *,
+    enable: tuple[str, ...],
+) -> MockConfigEntry:
+    patch_session(session)
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id="octocat",
+        data={
+            CONF_ACCESS_TOKEN: "token",
+            CONF_OWNER: "octocat",
+            CONF_TOKEN_TYPE: "classic",
+            CONF_MODULES: ["repositories"],
+        },
+        subentries_data=[
+            ConfigSubentryData(
+                data={CONF_REPOSITORY: "Octocat/Hello-World", CONF_ACTIONS: False},
+                subentry_type=SUBENTRY_REPOSITORY,
+                title="Octocat/Hello-World",
+                unique_id="octocat/hello-world",
+            )
+        ],
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    if enable:
+        registry = er.async_get(hass)
+        for key in enable:
+            entity = next(
+                e
+                for e in registry.entities.values()
+                if e.unique_id.endswith(f"hello-world_{key}")
+            )
+            registry.async_update_entity(entity.entity_id, disabled_by=None)
+        await hass.config_entries.async_reload(entry.entry_id)
+        await hass.async_block_till_done()
+    return entry
+
+
+async def test_the_traffic_group_is_not_fetched_while_every_traffic_sensor_is_off(
+    hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
+) -> None:
+    session = _TrafficSession()
+
+    await _setup_traffic(hass, patch_session, session, enable=())
+
+    assert session.traffic_urls == []
+
+
+async def test_enabling_traffic_sensors_reports_the_traffic(
+    hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
+) -> None:
+    session = _TrafficSession()
+    await _setup_traffic(hass, patch_session, session, enable=TRAFFIC_KEYS)
+    repo = "Octocat/Hello-World"
+
+    assert _state(hass, repo, "unique_visitors_14d").state == "12"
+    assert _state(hass, repo, "views_14d").state == "27"
+    assert _state(hass, repo, "unique_cloners_14d").state == "6"
+    assert _state(hass, repo, "clones_14d").state == "30"
+    peak = _state(hass, repo, "peak_visitor_day")
+    assert peak.state == "2026-10-22"
+    assert peak.attributes["visitors"] == 7
+    assert peak.attributes["views"] == 9
+    referrer = _state(hass, repo, "top_referrer")
+    assert referrer.state == "Google"
+    assert referrer.attributes["referrers"][0] == {
+        "name": "Google",
+        "views": 20,
+        "visitors": 9,
+    }
+    assert len(referrer.attributes["referrers"]) == 2
+    path = _state(hass, repo, "top_path")
+    assert path.state == "/Octocat/Hello-World"
+    assert path.attributes["paths"][0]["visitors"] == 10
+    trend = _state(hass, repo, "visitor_trend")
+    assert trend.state == "100.0"
+    assert trend.attributes["recent_daily_average"] == 2.0
+    assert trend.attributes["previous_daily_average"] == 1.0
+    assert _state(hass, repo, "clone_visitor_ratio").state == "0.5"
+
+
+async def test_traffic_sensors_are_unavailable_without_push_access(
+    hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
+) -> None:
+    session = _TrafficSession(forbidden=True)
+    await _setup_traffic(hass, patch_session, session, enable=TRAFFIC_KEYS)
+
+    for key in TRAFFIC_KEYS:
+        assert _state(hass, "Octocat/Hello-World", key).state == "unavailable", key
+    assert _state(hass, "Octocat/Hello-World", "stars").state == "42"

@@ -30,6 +30,7 @@ from .query_coordinator import GROUP_QUERY, QueryCoordinator
 from .repository_coordinator import (
     GROUP_DOWNLOADS,
     GROUP_OVERVIEW,
+    GROUP_TRAFFIC,
     RepositoryCoordinator,
     repository_subentries,
 )
@@ -117,7 +118,7 @@ class RepositorySensor(GitHubPulseEntity, SensorEntity):
 
     coordinator: RepositoryCoordinator
     entity_description: RepositorySensorDescription
-    _unrecorded_attributes = frozenset({"url", "name"})
+    _unrecorded_attributes = frozenset({"url", "name", "referrers", "paths"})
 
     def __init__(
         self,
@@ -144,12 +145,18 @@ class RepositorySensor(GitHubPulseEntity, SensorEntity):
             snapshot=snapshot,
             total_downloads=data.get(GROUP_DOWNLOADS, {}).get(self._full_name),
             now=now(),
+            traffic=data.get(GROUP_TRAFFIC, {}).get(self._full_name),
         )
 
     @property
     def available(self) -> bool:
-        """Return whether GitHub returned this repository."""
-        return super().available and self._view() is not None
+        """Return whether GitHub returned this repository, and its traffic if read."""
+        view = self._view()
+        if not super().available or view is None:
+            return False
+        return (
+            self.entity_description.group != GROUP_TRAFFIC or view.traffic is not None
+        )
 
     @property
     def native_value(self) -> StateType | datetime:
