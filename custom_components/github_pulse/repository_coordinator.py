@@ -9,6 +9,7 @@ from homeassistant.config_entries import ConfigSubentry
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
+from .analytics.traffic import RepositoryTraffic
 from .const import CONF_REPOSITORY, SUBENTRY_REPOSITORY
 from .coordinator import GitHubPulseCoordinator, GroupFetcher
 from .models import GitHubPulseConfigEntry
@@ -18,10 +19,12 @@ from .repository_fetch import (
     fetch_total_downloads,
 )
 from .settings import Settings
+from .traffic_fetch import fetch_traffic
 
 GROUP_OVERVIEW = "overview"
 GROUP_DOWNLOADS = "downloads"
-REPOSITORY_GROUPS = frozenset({GROUP_OVERVIEW, GROUP_DOWNLOADS})
+GROUP_TRAFFIC = "traffic"
+REPOSITORY_GROUPS = frozenset({GROUP_OVERVIEW, GROUP_DOWNLOADS, GROUP_TRAFFIC})
 
 
 def repository_subentries(
@@ -61,6 +64,7 @@ class RepositoryCoordinator(GitHubPulseCoordinator):
         groups: dict[str, GroupFetcher] = {
             GROUP_OVERVIEW: self._fetch_overview,
             GROUP_DOWNLOADS: self._fetch_downloads,
+            GROUP_TRAFFIC: self._fetch_traffic,
         }
         super().__init__(
             hass,
@@ -85,3 +89,9 @@ class RepositoryCoordinator(GitHubPulseCoordinator):
             *(fetch_total_downloads(self.client, name) for name in self.repositories)
         )
         return dict(zip(self.repositories, totals, strict=True))
+
+    async def _fetch_traffic(self) -> dict[str, RepositoryTraffic | None]:
+        traffic = await asyncio.gather(
+            *(fetch_traffic(self.client, name) for name in self.repositories)
+        )
+        return dict(zip(self.repositories, traffic, strict=True))
