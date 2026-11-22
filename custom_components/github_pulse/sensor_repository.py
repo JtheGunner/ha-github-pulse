@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 
 from homeassistant.components.sensor import (
@@ -16,7 +16,15 @@ from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfTime
 from homeassistant.util import dt as dt_util
 
 from .analytics.periods import percent_change
-from .repository_coordinator import GROUP_DOWNLOADS, GROUP_OVERVIEW
+from .analytics.traffic import (
+    RankedEntry,
+    RepositoryTraffic,
+    VisitorTrend,
+    clone_ratio,
+    peak_day,
+    visitor_trend,
+)
+from .repository_coordinator import GROUP_DOWNLOADS, GROUP_OVERVIEW, GROUP_TRAFFIC
 from .repository_fetch import RepositoryActivity, RepositorySnapshot
 
 CI_STATES = ["success", "failure", "pending", "error", "expected"]
@@ -31,6 +39,7 @@ class RepositoryView:
     snapshot: RepositorySnapshot
     total_downloads: int | None
     now: datetime
+    traffic: RepositoryTraffic | None = None
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -105,6 +114,132 @@ def _change_attributes(view: RepositoryView, *, year: bool) -> Attributes:
         "elapsed_days": activity.elapsed_days,
     }
 
+
+def _ranking(entries: tuple[RankedEntry, ...]) -> list[dict[str, Any]]:
+    return [
+        {"name": entry.name, "views": entry.count, "visitors": entry.uniques}
+        for entry in entries
+    ]
+
+
+def _top_name(entries: tuple[RankedEntry, ...]) -> str | None:
+    return entries[0].name if entries else None
+
+
+def _peak_day(view: RepositoryView) -> date | None:
+    peak = None if view.traffic is None else peak_day(view.traffic)
+    return None if peak is None else peak.day
+
+
+def _peak_day_attributes(view: RepositoryView) -> Attributes:
+    peak = None if view.traffic is None else peak_day(view.traffic)
+    return {} if peak is None else {"visitors": peak.uniques, "views": peak.count}
+
+
+def _trend(view: RepositoryView) -> VisitorTrend | None:
+    if view.traffic is None:
+        return None
+    return visitor_trend(view.traffic, view.now.date())
+
+
+def _trend_attributes(view: RepositoryView) -> Attributes:
+    trend = _trend(view)
+    if trend is None:
+        return {}
+    return {
+        "recent_daily_average": round(trend.recent_average, 2),
+        "previous_daily_average": round(trend.previous_average, 2),
+    }
+
+
+def _traffic_description(
+    key: str,
+    value_fn: Callable[[RepositoryTraffic], Any],
+    **kwargs: Any,
+) -> RepositorySensorDescription:
+    """Describe a sensor of the traffic group; all of them are off by default."""
+    return RepositorySensorDescription(
+        key=key,
+        translation_key=key,
+        group=GROUP_TRAFFIC,
+        entity_registry_enabled_default=False,
+        value_fn=lambda view: None if view.traffic is None else value_fn(view.traffic),
+        **kwargs,
+    )
+
+
+TRAFFIC_SENSORS: tuple[RepositorySensorDescription, ...] = (
+    _traffic_description(
+        "unique_visitors_14d",
+        lambda traffic: traffic.views.uniques,
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    _traffic_description(
+        "views_14d",
+        lambda traffic: traffic.views.count,
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    _traffic_description(
+        "unique_cloners_14d",
+        lambda traffic: traffic.clones.uniques,
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    _traffic_description(
+        "clones_14d",
+        lambda traffic: traffic.clones.count,
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    RepositorySensorDescription(
+        key="peak_visitor_day",
+        translation_key="peak_visitor_day",
+        group=GROUP_TRAFFIC,
+        entity_registry_enabled_default=False,
+        device_class=SensorDeviceClass.DATE,
+        value_fn=_peak_day,
+        attributes_fn=_peak_day_attributes,
+    ),
+    RepositorySensorDescription(
+        key="top_referrer",
+        translation_key="top_referrer",
+        group=GROUP_TRAFFIC,
+        entity_registry_enabled_default=False,
+        value_fn=lambda view: (
+            None if view.traffic is None else _top_name(view.traffic.referrers)
+        ),
+        attributes_fn=lambda view: (
+            {}
+            if view.traffic is None
+            else {"referrers": _ranking(view.traffic.referrers)}
+        ),
+    ),
+    RepositorySensorDescription(
+        key="top_path",
+        translation_key="top_path",
+        group=GROUP_TRAFFIC,
+        entity_registry_enabled_default=False,
+        value_fn=lambda view: (
+            None if view.traffic is None else _top_name(view.traffic.paths)
+        ),
+        attributes_fn=lambda view: (
+            {} if view.traffic is None else {"paths": _ranking(view.traffic.paths)}
+        ),
+    ),
+    RepositorySensorDescription(
+        key="visitor_trend",
+        translation_key="visitor_trend",
+        group=GROUP_TRAFFIC,
+        entity_registry_enabled_default=False,
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda view: None if (t := _trend(view)) is None else t.percent,
+        attributes_fn=_trend_attributes,
+    ),
+    _traffic_description(
+        "clone_visitor_ratio",
+        clone_ratio,
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+)
 
 REPOSITORY_SENSORS: tuple[RepositorySensorDescription, ...] = (
     RepositorySensorDescription(
@@ -243,6 +378,7 @@ REPOSITORY_SENSORS: tuple[RepositorySensorDescription, ...] = (
         device_class=SensorDeviceClass.TIMESTAMP,
         value_fn=lambda view: view.snapshot.pushed_at,
     ),
+    *TRAFFIC_SENSORS,
 )
 
 

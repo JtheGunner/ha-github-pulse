@@ -76,6 +76,9 @@ The setup checks the token against every module you select and tells you what is
 > [!IMPORTANT]
 > Fine-grained tokens belong to a single owner and cannot read Packages. Use a classic token if you need more.
 
+> [!NOTE]
+> The repository traffic sensors only work for repositories you have write access to; GitHub shows traffic to no one else, and only for the last 14 days. A classic token with `repo` covers it. GitHub does not document a fine-grained permission for traffic, so if the sensors stay unavailable with a fine-grained token, use a classic one.
+
 ---
 
 ## 🧩 What you get
@@ -87,7 +90,7 @@ The setup checks the token against every module you select and tells you what is
 | ⚙️ | Workflow runs    | Per repository, if you turn on **Track workflow runs**: last result, runs today, queued runs, failure rate over 7 and 30 days, average duration, and a binary sensor while a workflow runs                                                                                                                                                                                                                        |
 | 🔔 | Events           | Event entities per repository (workflow failed or recovered, release published) and for your account (review requested, pull request merged), also fired on the event bus                                                                                                                                                                                                                                         |
 | 🧪 | Custom queries   | Your own read-only GraphQL query as a sensor, added under **Add custom query**. Rendered with templates over `value_json`. Presets included; see the [guide](docs/custom-queries.md)                                                                                                                                                                                                                              |
-| ➕ | Optional sensors | Reviews, issues, active days, strongest weekday, watchers, release downloads, days since last commit or release, pull requests awaiting your review, most active hour and night-owl score (approximate, from GitHub's last 300 events), average time to merge (last 50 merged pull requests), stale pull requests (open, untouched for 14 days), year in review (one-line summary with the details as attributes), followers and following counts |
+| ➕ | Optional sensors | Reviews, issues, active days, strongest weekday, watchers, release downloads, days since last commit or release, pull requests awaiting your review, most active hour and night-owl score (approximate, from GitHub's last 300 events), average time to merge (last 50 merged pull requests), stale pull requests (open, untouched for 14 days), year in review (one-line summary with the details as attributes), followers and following counts, repository traffic (unique visitors and cloners and page views and clones over the last 14 days, peak visitor day, top referrer and page, visitor trend, cloners per visitor; needs write access, see [Access token](#-access-token)) |
 
 Everything marked optional is created disabled. GitHub Pulse only fetches data that an enabled entity needs, so unused sensors cost no API calls.
 

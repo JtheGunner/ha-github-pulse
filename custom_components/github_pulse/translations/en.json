@@ -193,6 +193,33 @@
       "last_push": {
         "name": "Last push"
       },
+      "unique_visitors_14d": {
+        "name": "Unique visitors (14 days)"
+      },
+      "views_14d": {
+        "name": "Page views (14 days)"
+      },
+      "unique_cloners_14d": {
+        "name": "Unique cloners (14 days)"
+      },
+      "clones_14d": {
+        "name": "Clones (14 days)"
+      },
+      "peak_visitor_day": {
+        "name": "Peak visitor day"
+      },
+      "top_referrer": {
+        "name": "Top referrer"
+      },
+      "top_path": {
+        "name": "Top page"
+      },
+      "visitor_trend": {
+        "name": "Visitor trend"
+      },
+      "clone_visitor_ratio": {
+        "name": "Cloners per visitor"
+      },
       "review_requests": {
         "name": "Pull requests awaiting my review"
       },
