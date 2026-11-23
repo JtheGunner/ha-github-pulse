@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.4.0] - 2026-11-23
+
+### Added
+
+- Optional repository **traffic** sensors: unique visitors, page views, unique cloners and clones over the last 14 days, the peak visitor day, the top referrer and top page (top 5 as attributes), the visitor trend (last 7 complete days against the earlier days) and cloners per visitor. They are disabled by default and fetch nothing until you enable one. GitHub shows traffic only for repositories you have write access to; for other repositories the sensors are unavailable.
+
 ## [1.3.0] - 2026-11-15
 
 ### Added
