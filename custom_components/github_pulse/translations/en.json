@@ -397,6 +397,20 @@
       "message": "The GraphQL rate budget is nearly used up. Try again after it resets."
     }
   },
+  "issues": {
+    "rate_limited": {
+      "title": "GitHub rate limit reached",
+      "description": "GitHub Pulse could not refresh {name} ({group}) because the GitHub rate limit is used up. Values stay at their last known state. The limit resets at {reset}. GitHub said: {detail}"
+    },
+    "forbidden": {
+      "title": "GitHub refused a request",
+      "description": "GitHub Pulse could not refresh {name} ({group}) because GitHub refused the request. The access token may lack a permission or scope. GitHub said: {detail}"
+    },
+    "unavailable": {
+      "title": "GitHub is not responding",
+      "description": "GitHub Pulse could not refresh {name} ({group}) several times in a row because GitHub did not answer properly. Values stay at their last known state and the next refresh tries again. GitHub said: {detail}"
+    }
+  },
   "config_subentries": {
     "repository": {
       "initiate_flow": {

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Any
@@ -15,9 +15,16 @@ from .analytics.periods import (
     month_to_date,
     to_utc_window,
 )
-from .api import GitHubClient
+from .api import (
+    GitHubAuthError,
+    GitHubClient,
+    GitHubError,
+    GitHubForbiddenError,
+    GitHubRateLimitError,
+)
+from .const import LOGGER
 
-BATCH_SIZE = 50
+BATCH_SIZE = 10
 COMMIT_PAGE = 100
 _TIME = "%Y-%m-%dT%H:%M:%SZ"
 
@@ -237,17 +244,33 @@ async def fetch_snapshots(
     *,
     today: date,
     zone: ZoneInfo,
+    previous: Mapping[str, RepositorySnapshot | None] | None = None,
 ) -> dict[str, RepositorySnapshot | None]:
     """Fetch every repository; one that cannot be read maps to ``None``.
 
     All names go into one request (in batches of ``BATCH_SIZE`` for very long
     lists), so tracking another repository adds no request.
+
+    A batch that fails with a transient error keeps the repositories of the
+    other batches intact: its repositories fall back to their ``previous``
+    snapshot. Authentication, permission and rate-limit errors abort the whole
+    fetch, and so does a failure of every batch.
     """
     result: dict[str, RepositorySnapshot | None] = {}
+    failures: list[GitHubError] = []
     for start in range(0, len(repositories), BATCH_SIZE):
         batch = repositories[start : start + BATCH_SIZE]
         query, variables = build_query(batch, today, zone)
-        response = await client.graphql(query, variables)
+        try:
+            response = await client.graphql(query, variables)
+        except GitHubAuthError, GitHubForbiddenError, GitHubRateLimitError:
+            raise
+        except GitHubError as err:
+            LOGGER.debug("Repository batch %s failed: %s", start // BATCH_SIZE, err)
+            failures.append(err)
+            for full_name in batch:
+                result[full_name] = (previous or {}).get(full_name)
+            continue
         for index, full_name in enumerate(batch):
             raw = response.data.get(f"r{index}")
             result[full_name] = (
@@ -261,6 +284,8 @@ async def fetch_snapshots(
                     issues=response.data.get(f"i{index}"),
                 )
             )
+    if failures and len(failures) == -(-len(repositories) // BATCH_SIZE):
+        raise failures[0]
     return result
 
 

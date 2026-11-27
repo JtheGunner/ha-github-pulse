@@ -12,6 +12,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.typing import ConfigType
 
@@ -144,8 +145,14 @@ def _async_reload_on_change(
 async def async_unload_entry(
     hass: HomeAssistant, entry: GitHubPulseConfigEntry
 ) -> bool:
-    """Unload a config entry."""
-    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    """Unload a config entry and drop its repair issues."""
+    unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    if unloaded:
+        registry = ir.async_get(hass)
+        for domain, issue_id in list(registry.issues):
+            if domain == DOMAIN and issue_id.startswith(f"{entry.entry_id}_"):
+                ir.async_delete_issue(hass, domain, issue_id)
+    return unloaded
 
 
 def _snapshot(entry: ConfigEntry[Any]) -> dict[str, Any]:

@@ -9,7 +9,14 @@ from typing import Any
 from unittest.mock import AsyncMock
 from zoneinfo import ZoneInfo
 
-from custom_components.github_pulse.api import GitHubClient, GraphQLResult
+import pytest
+from custom_components.github_pulse.api import (
+    GitHubAuthError,
+    GitHubClient,
+    GitHubError,
+    GitHubRateLimitError,
+    GraphQLResult,
+)
 from custom_components.github_pulse.api.query_validation import parse_query
 from custom_components.github_pulse.api.repository import _LIST_QUERY
 from custom_components.github_pulse.const import (
@@ -131,6 +138,10 @@ async def test_adding_a_repository_does_not_add_a_request() -> None:
     assert one.graphql.await_count == ten.graphql.await_count == 1
 
 
+def test_batches_stay_small_enough_for_a_fast_first_refresh() -> None:
+    assert BATCH_SIZE <= 10
+
+
 async def test_very_long_lists_are_split_into_batches() -> None:
     client = _client()
 
@@ -139,6 +150,67 @@ async def test_very_long_lists_are_split_into_batches() -> None:
 
     assert client.graphql.await_count == 2
     assert len(result) == BATCH_SIZE + 1
+
+
+def _client_failing_batch(error: GitHubError, failing_call: int) -> Any:
+    """Answer like ``_client`` but raise ``error`` on the given 1-based call."""
+    inner = _client()
+    answer = inner.graphql.side_effect
+    calls = 0
+
+    async def graphql(query: str, variables: Any = None) -> GraphQLResult:
+        nonlocal calls
+        calls += 1
+        if calls == failing_call:
+            raise error
+        return await answer(query, variables)
+
+    inner.graphql.side_effect = graphql
+    return inner
+
+
+def _names() -> list[str]:
+    return [f"a/r{i}" for i in range(BATCH_SIZE + 1)]
+
+
+async def test_a_failed_batch_keeps_the_other_batches() -> None:
+    client = _client_failing_batch(GitHubError("bad gateway", status=502), 2)
+
+    result = await fetch_snapshots(client, _names(), today=TODAY, zone=ZONE)
+
+    assert all(result[name] is not None for name in _names()[:BATCH_SIZE])
+    assert result[_names()[-1]] is None
+
+
+async def test_a_failed_batch_keeps_the_previous_snapshots() -> None:
+    first = await fetch_snapshots(_client(), _names(), today=TODAY, zone=ZONE)
+    client = _client_failing_batch(GitHubError("bad gateway", status=502), 2)
+
+    result = await fetch_snapshots(
+        client, _names(), today=TODAY, zone=ZONE, previous=first
+    )
+
+    assert result[_names()[-1]] is first[_names()[-1]]
+    assert result[_names()[-1]] is not None
+
+
+async def test_every_batch_failing_raises_the_first_error() -> None:
+    client = _client()
+    client.graphql.side_effect = GitHubError("bad gateway", status=502)
+
+    with pytest.raises(GitHubError, match="bad gateway"):
+        await fetch_snapshots(client, _names(), today=TODAY, zone=ZONE)
+
+
+@pytest.mark.parametrize(
+    "error",
+    [GitHubAuthError("bad credentials"), GitHubRateLimitError("limit")],
+)
+async def test_auth_and_rate_limit_errors_abort_the_fetch(error: GitHubError) -> None:
+    client = _client_failing_batch(error, 2)
+
+    with pytest.raises(type(error)):
+        await fetch_snapshots(client, _names(), today=TODAY, zone=ZONE)
 
 
 async def test_a_repository_without_release_or_ci_still_parses() -> None:

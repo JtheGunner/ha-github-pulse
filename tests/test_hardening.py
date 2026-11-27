@@ -92,11 +92,26 @@ async def test_a_large_account_is_fetched_in_batches(
     await hass.async_block_till_done()
 
     assert entry.state is ConfigEntryState.LOADED
-    assert session.snapshots == 3  # 120 repositories in batches of 50
+    assert session.snapshots == 12  # 120 repositories in batches of 10
     registry = er.async_get(hass)
     stars = [e for e in registry.entities.values() if e.unique_id.endswith("_stars")]
     assert len(stars) == 120
     assert len(entry.runtime_data.repositories.data[GROUP_OVERVIEW]) == 120
+
+
+async def test_starting_offline_with_repositories_retries_instead_of_failing(
+    hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
+) -> None:
+    session = _AccountSession()
+    session.mode = "offline"
+    patch_session(session)
+    entry = _entry(["repositories"], subentries_data=[_subentry("org/repo")])
+    entry.add_to_hass(hass)
+
+    with patch("custom_components.github_pulse.api.client._backoff", return_value=0):
+        await hass.config_entries.async_setup(entry.entry_id)
+
+    assert entry.state is ConfigEntryState.SETUP_RETRY
 
 
 async def test_starting_offline_retries_instead_of_failing(
