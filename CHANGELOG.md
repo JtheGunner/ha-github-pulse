@@ -10,6 +10,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- Every sensor, binary sensor and event entity now has a fitting icon instead of Home Assistant's default eye. The CI state, the last workflow result and the "workflow running" sensor change their icon with their state, and custom query sensors use a code icon.
 - Repositories are now requested in batches of 10 instead of 50, so the first refresh of a long repository list no longer risks running into Home Assistant's startup limits.
 - When GitHub fails for one batch of repositories (for example with a 502), the other batches are still updated and the affected repositories keep their last values, instead of every repository sensor turning unavailable.
 

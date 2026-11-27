@@ -1,0 +1,91 @@
+{
+  "entity": {
+    "sensor": {
+      "followers": {"default": "mdi:account-multiple"},
+      "following": {"default": "mdi:account-arrow-right"},
+      "contributions_this_month": {"default": "mdi:source-commit"},
+      "commits_this_month": {"default": "mdi:source-commit"},
+      "pull_requests_this_month": {"default": "mdi:source-pull"},
+      "commits_vs_last_month": {"default": "mdi:chart-line-variant"},
+      "commits_vs_last_year": {"default": "mdi:chart-timeline-variant"},
+      "busiest_month": {"default": "mdi:calendar-star"},
+      "current_streak": {"default": "mdi:fire"},
+      "longest_streak": {"default": "mdi:trophy-outline"},
+      "reviews_this_month": {"default": "mdi:eye-check-outline"},
+      "issues_this_month": {"default": "mdi:alert-circle-outline"},
+      "active_days_this_month": {"default": "mdi:calendar-check"},
+      "most_productive_weekday": {"default": "mdi:calendar-week"},
+      "most_active_hour": {"default": "mdi:clock-outline"},
+      "night_owl_score": {"default": "mdi:owl"},
+      "average_time_to_merge": {"default": "mdi:source-merge"},
+      "stale_pull_requests": {"default": "mdi:timer-sand"},
+      "year_in_review": {"default": "mdi:calendar-text"},
+      "top_language": {"default": "mdi:code-tags"},
+      "language_shift": {"default": "mdi:swap-horizontal"},
+      "review_requests": {"default": "mdi:account-eye-outline"},
+      "authored_open_pull_requests": {"default": "mdi:source-branch"},
+      "stars": {"default": "mdi:star-outline"},
+      "forks": {"default": "mdi:source-fork"},
+      "open_issues": {"default": "mdi:alert-circle-outline"},
+      "open_pull_requests": {"default": "mdi:source-pull"},
+      "latest_release": {"default": "mdi:tag-outline"},
+      "watchers": {"default": "mdi:bell-outline"},
+      "latest_release_downloads": {"default": "mdi:download-circle-outline"},
+      "total_downloads": {"default": "mdi:download-multiple"},
+      "days_since_last_commit": {"default": "mdi:source-commit"},
+      "days_since_last_release": {"default": "mdi:tag-text-outline"},
+      "last_push": {"default": "mdi:cloud-upload-outline"},
+      "ci_state": {
+        "default": "mdi:check-network-outline",
+        "state": {
+          "success": "mdi:check-circle-outline",
+          "failure": "mdi:close-circle-outline",
+          "pending": "mdi:progress-clock",
+          "error": "mdi:alert-circle-outline",
+          "expected": "mdi:clock-outline"
+        }
+      },
+      "unique_visitors_14d": {"default": "mdi:account-group-outline"},
+      "views_14d": {"default": "mdi:eye-outline"},
+      "unique_cloners_14d": {"default": "mdi:account-arrow-down-outline"},
+      "clones_14d": {"default": "mdi:content-copy"},
+      "peak_visitor_day": {"default": "mdi:calendar-arrow-right"},
+      "top_referrer": {"default": "mdi:link-variant"},
+      "top_path": {"default": "mdi:file-document-outline"},
+      "visitor_trend": {"default": "mdi:trending-up"},
+      "clone_visitor_ratio": {"default": "mdi:percent-outline"},
+      "actions_last_result": {
+        "default": "mdi:play-circle-outline",
+        "state": {
+          "success": "mdi:check-circle-outline",
+          "failure": "mdi:close-circle-outline",
+          "cancelled": "mdi:cancel",
+          "skipped": "mdi:skip-next-circle-outline",
+          "timed_out": "mdi:timer-off-outline",
+          "neutral": "mdi:minus-circle-outline",
+          "action_required": "mdi:alert-circle-outline",
+          "stale": "mdi:history",
+          "startup_failure": "mdi:alert-octagon-outline"
+        }
+      },
+      "actions_runs_today": {"default": "mdi:play-box-multiple-outline"},
+      "actions_queued_runs": {"default": "mdi:tray-full"},
+      "actions_failure_rate_7d": {"default": "mdi:alert-decagram-outline"},
+      "actions_failure_rate_30d": {"default": "mdi:alert-decagram-outline"},
+      "actions_average_duration": {"default": "mdi:timer-outline"}
+    },
+    "binary_sensor": {
+      "actions_running": {
+        "default": "mdi:cog-pause-outline",
+        "state": {
+          "on": "mdi:cog-sync-outline",
+          "off": "mdi:cog-pause-outline"
+        }
+      }
+    },
+    "event": {
+      "repository_events": {"default": "mdi:bell-ring-outline"},
+      "account_events": {"default": "mdi:source-pull"}
+    }
+  }
+}
