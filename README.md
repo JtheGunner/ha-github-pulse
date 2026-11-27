@@ -133,7 +133,7 @@ statistics.
 > Why do totals differ from github.com, and why are some counts "restricted"? See [visible and restricted contributions](docs/contributions.md).
 
 > [!NOTE]
-> If GitHub's rate limit is used up or the token is refused, a notice appears under **Settings → Repairs** and clears after the next successful refresh. The sensors keep their last known values meanwhile.
+> If GitHub's rate limit is used up, the token is refused, or GitHub keeps failing to answer, a notice appears under **Settings → Repairs** and clears after the next successful refresh. The sensors keep their last known values meanwhile.
 
 > [!NOTE]
 > Language statistics are **estimated**: GitHub provides language data per repository, not per commit. The estimate weights your commits by each repository's language mix.

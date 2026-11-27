@@ -19,6 +19,7 @@ from .api import (
     GitHubError,
     GitHubForbiddenError,
     GitHubRateLimitError,
+    GitHubTransportError,
 )
 from .const import DOMAIN, LOGGER
 from .models import GitHubPulseConfigEntry
@@ -27,7 +28,10 @@ SLOWDOWN_FACTOR = 4
 
 ISSUE_RATE_LIMITED = "rate_limited"
 ISSUE_FORBIDDEN = "forbidden"
-_ISSUE_KINDS = (ISSUE_RATE_LIMITED, ISSUE_FORBIDDEN)
+ISSUE_UNAVAILABLE = "unavailable"
+_ISSUE_KINDS = (ISSUE_RATE_LIMITED, ISSUE_FORBIDDEN, ISSUE_UNAVAILABLE)
+OUTAGE_STREAK = 2
+HTTP_SERVER_ERROR = 500
 
 type GroupFetcher = Callable[[], Awaitable[Any]]
 
@@ -39,8 +43,9 @@ class GitHubPulseCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     * A group that fails keeps its last good value; the error is kept in
       :attr:`errors`. The update only fails when every active group failed.
     * An authentication error starts reauthentication.
-    * A rate-limit or permission error raises a repair issue that clears once
-      the group refreshes again.
+    * A rate-limit or permission error raises a repair issue at once, an outage
+      (network error or GitHub 5xx) after ``OUTAGE_STREAK`` failed refreshes in
+      a row. The issue clears once the group refreshes again.
     * While the rate budget of ``rate_resource`` is low, polling slows down.
     """
 
@@ -72,6 +77,7 @@ class GitHubPulseCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._active = frozenset(active_groups) & self._groups.keys()
         self._base_interval = update_interval
         self._rate_resource = rate_resource
+        self._outage_streaks: dict[str, int] = {}
 
     @property
     def active_groups(self) -> frozenset[str]:
@@ -113,22 +119,15 @@ class GitHubPulseCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def _sync_repair_issues(
         self, successes: Mapping[str, Any], failures: Mapping[str, GitHubError]
     ) -> None:
-        """Raise a repair issue per rate-limited or forbidden group, clear the rest."""
+        """Raise a repair issue per failing group and clear those that recovered."""
         for group in successes:
-            for kind in _ISSUE_KINDS:
-                ir.async_delete_issue(self.hass, DOMAIN, self._issue_id(group, kind))
+            self._outage_streaks.pop(group, None)
+            self._clear_issues(group)
         for group, error in failures.items():
-            if isinstance(error, GitHubRateLimitError):
-                kind = ISSUE_RATE_LIMITED
-            elif isinstance(error, GitHubForbiddenError):
-                kind = ISSUE_FORBIDDEN
-            else:
+            kind = self._issue_kind(group, error)
+            if kind is None:
                 continue
-            for other in _ISSUE_KINDS:
-                if other != kind:
-                    ir.async_delete_issue(
-                        self.hass, DOMAIN, self._issue_id(group, other)
-                    )
+            self._clear_issues(group, keep=kind)
             ir.async_create_issue(
                 self.hass,
                 DOMAIN,
@@ -143,6 +142,27 @@ class GitHubPulseCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     "detail": str(error),
                 },
             )
+
+    def _issue_kind(self, group: str, error: GitHubError) -> str | None:
+        """Return the repair issue kind for a failure, or ``None`` for no issue."""
+        if isinstance(error, GitHubRateLimitError):
+            return ISSUE_RATE_LIMITED
+        if isinstance(error, GitHubForbiddenError):
+            return ISSUE_FORBIDDEN
+        is_outage = isinstance(error, GitHubTransportError) or (
+            error.status is not None and error.status >= HTTP_SERVER_ERROR
+        )
+        if not is_outage:
+            self._outage_streaks.pop(group, None)
+            return None
+        streak = self._outage_streaks.get(group, 0) + 1
+        self._outage_streaks[group] = streak
+        return ISSUE_UNAVAILABLE if streak >= OUTAGE_STREAK else None
+
+    def _clear_issues(self, group: str, keep: str | None = None) -> None:
+        for kind in _ISSUE_KINDS:
+            if kind != keep:
+                ir.async_delete_issue(self.hass, DOMAIN, self._issue_id(group, kind))
 
     def _adapt_interval(self) -> None:
         """Slow polling down while the rate budget is nearly spent."""

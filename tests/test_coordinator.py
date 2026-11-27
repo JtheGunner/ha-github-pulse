@@ -10,6 +10,7 @@ import pytest
 from custom_components.github_pulse.api import (
     GitHubAuthError,
     GitHubClient,
+    GitHubError,
     GitHubForbiddenError,
     GitHubRateLimitError,
     GitHubTransportError,
@@ -252,10 +253,74 @@ async def test_other_failures_raise_no_repair_issue(
     coordinator = _coordinator(
         hass,
         entry,
-        {"a": _value(1), "b": _failing(GitHubTransportError("down"))},
+        {"a": _value(1), "b": _failing(GitHubError("odd", status=418))},
         {"a", "b"},
     )
 
+    for _ in range(3):
+        await coordinator._async_update_data()
+
+    assert _issue_ids(hass) == set()
+
+
+@pytest.mark.parametrize(
+    "error",
+    [GitHubTransportError("down"), GitHubError("bad gateway", status=502)],
+)
+async def test_a_repeated_outage_raises_a_repair_issue(
+    hass: HomeAssistant,
+    patch_session: Callable[[FakeSession], None],
+    error: GitHubError,
+) -> None:
+    entry = await _entry(hass, patch_session)
+    coordinator = _coordinator(
+        hass, entry, {"a": _value(1), "b": _failing(error)}, {"a", "b"}
+    )
+    issue_id = f"{entry.entry_id}_test_b_unavailable"
+
+    await coordinator._async_update_data()
+    assert issue_id not in _issue_ids(hass)
+
+    await coordinator._async_update_data()
+    assert issue_id in _issue_ids(hass)
+
+
+async def test_a_single_outage_between_successes_raises_no_issue(
+    hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
+) -> None:
+    entry = await _entry(hass, patch_session)
+    down = False
+
+    async def flaky() -> int:
+        if down:
+            raise GitHubTransportError("down")
+        return 2
+
+    coordinator = _coordinator(hass, entry, {"a": _value(1), "b": flaky}, {"a", "b"})
+    for state in (True, False, True, False):
+        down = state
+        await coordinator._async_update_data()
+
+    assert _issue_ids(hass) == set()
+
+
+async def test_an_outage_issue_clears_after_a_successful_refresh(
+    hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
+) -> None:
+    entry = await _entry(hass, patch_session)
+    down = True
+
+    async def flaky() -> int:
+        if down:
+            raise GitHubTransportError("down")
+        return 2
+
+    coordinator = _coordinator(hass, entry, {"a": _value(1), "b": flaky}, {"a", "b"})
+    await coordinator._async_update_data()
+    await coordinator._async_update_data()
+    assert _issue_ids(hass)
+
+    down = False
     await coordinator._async_update_data()
 
     assert _issue_ids(hass) == set()

@@ -82,6 +82,7 @@ class RepositoryCoordinator(GitHubPulseCoordinator):
             self.repositories,
             today=dt_util.now(self._zone).date(),
             zone=self._zone,
+            previous=(self.data or {}).get(GROUP_OVERVIEW),
         )
 
     async def _fetch_downloads(self) -> dict[str, int]:

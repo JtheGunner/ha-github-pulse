@@ -405,6 +405,10 @@
     "forbidden": {
       "title": "GitHub hat eine Anfrage abgelehnt",
       "description": "GitHub Pulse konnte {name} ({group}) nicht aktualisieren, weil GitHub die Anfrage abgelehnt hat. Dem Zugriffstoken fehlt womöglich eine Berechtigung oder ein Scope. GitHub meldete: {detail}"
+    },
+    "unavailable": {
+      "title": "GitHub antwortet nicht",
+      "description": "GitHub Pulse konnte {name} ({group}) mehrmals hintereinander nicht aktualisieren, weil GitHub nicht richtig geantwortet hat. Die Werte bleiben auf dem letzten bekannten Stand, der nächste Abruf versucht es erneut. GitHub meldete: {detail}"
     }
   },
   "config_subentries": {
