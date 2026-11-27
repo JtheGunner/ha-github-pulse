@@ -93,7 +93,10 @@ STEP_REAUTH_SCHEMA = probatio.Schema(
     {probatio.Required(CONF_ACCESS_TOKEN): _TOKEN_SELECTOR}
 )
 STEP_RECONFIGURE_SCHEMA = probatio.Schema(
-    {probatio.Required(CONF_MODULES): _MODULES_SELECTOR}
+    {
+        probatio.Required(CONF_MODULES): _MODULES_SELECTOR,
+        probatio.Optional(CONF_ACCESS_TOKEN): _TOKEN_SELECTOR,
+    }
 )
 
 
@@ -330,7 +333,7 @@ class GitHubPulseConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Change which modules are enabled, keeping the stored token."""
+        """Change which modules are enabled and, optionally, replace the token."""
         errors: dict[str, str] = {}
         placeholders: dict[str, str] = {}
         entry = self._get_reconfigure_entry()
@@ -340,24 +343,30 @@ class GitHubPulseConfigFlow(ConfigFlow, domain=DOMAIN):
             if not modules:
                 errors["base"] = "no_modules"
             else:
+                new_token = user_input.get(CONF_ACCESS_TOKEN, "").strip()
+                token = new_token or entry.data[CONF_ACCESS_TOKEN]
                 verified = await _verify(
                     self.hass,
-                    entry.data[CONF_ACCESS_TOKEN],
+                    token,
                     modules,
                     expected_login=entry.data[CONF_OWNER],
                 )
                 errors = verified.errors
                 placeholders |= verified.placeholders
                 if verified.info:
+                    updates: dict[str, Any] = {CONF_MODULES: modules}
+                    if new_token:
+                        updates[CONF_ACCESS_TOKEN] = new_token
+                        updates[CONF_TOKEN_TYPE] = verified.info.token_type.value
                     return self.async_update_reload_and_abort(
-                        entry, data_updates={CONF_MODULES: modules}
+                        entry, data_updates=updates
                     )
 
         return self.async_show_form(
             step_id="reconfigure",
             data_schema=self.add_suggested_values_to_schema(
                 STEP_RECONFIGURE_SCHEMA,
-                user_input or {CONF_MODULES: entry.data[CONF_MODULES]},
+                {CONF_MODULES: (user_input or entry.data)[CONF_MODULES]},
             ),
             errors=errors,
             description_placeholders=placeholders,

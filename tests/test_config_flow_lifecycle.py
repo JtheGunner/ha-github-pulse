@@ -115,6 +115,72 @@ async def test_reconfigure_changes_the_modules(
     assert entry.data[CONF_ACCESS_TOKEN] == "ghp_old"
 
 
+async def test_reconfigure_replaces_the_token(
+    hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
+) -> None:
+    patch_session(FakeSession(USER_OK, GRAPHQL_OK))
+    entry = _entry(hass)
+
+    result = await entry.start_reconfigure_flow(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {CONF_MODULES: ["profile"], CONF_ACCESS_TOKEN: " ghp_new "},
+    )
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.data[CONF_ACCESS_TOKEN] == "ghp_new"
+    assert entry.data[CONF_TOKEN_TYPE] == "classic"
+    assert entry.data[CONF_OWNER] == "octocat"
+
+
+async def test_reconfigure_keeps_the_token_when_the_field_is_blank(
+    hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
+) -> None:
+    patch_session(FakeSession(USER_OK, GRAPHQL_OK))
+    entry = _entry(hass)
+
+    result = await entry.start_reconfigure_flow(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_MODULES: ["profile"], CONF_ACCESS_TOKEN: "  "}
+    )
+
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.data[CONF_ACCESS_TOKEN] == "ghp_old"
+
+
+async def test_reconfigure_rejects_a_token_of_another_account(
+    hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
+) -> None:
+    patch_session(FakeSession(OTHER_USER))
+    entry = _entry(hass)
+
+    result = await entry.start_reconfigure_flow(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {CONF_MODULES: ["profile"], CONF_ACCESS_TOKEN: "ghp_new"},
+    )
+
+    assert result["errors"] == {"base": "wrong_account"}
+    assert entry.data[CONF_ACCESS_TOKEN] == "ghp_old"
+
+
+async def test_reconfigure_rejects_an_invalid_new_token(
+    hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
+) -> None:
+    patch_session(FakeSession(BAD_CREDENTIALS))
+    entry = _entry(hass)
+
+    result = await entry.start_reconfigure_flow(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {CONF_MODULES: ["profile"], CONF_ACCESS_TOKEN: "ghp_bad"},
+    )
+
+    assert result["errors"] == {"base": "invalid_auth"}
+    assert entry.data[CONF_ACCESS_TOKEN] == "ghp_old"
+
+
 async def test_reconfigure_rejects_a_module_the_token_cannot_serve(
     hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
 ) -> None:
