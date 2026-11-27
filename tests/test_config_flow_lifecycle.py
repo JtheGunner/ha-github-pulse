@@ -130,6 +130,7 @@ async def test_reconfigure_replaces_the_token(
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "reconfigure_successful"
     assert entry.data[CONF_ACCESS_TOKEN] == "ghp_new"
+    assert entry.data[CONF_TOKEN_TYPE] == "classic"
     assert entry.data[CONF_OWNER] == "octocat"
 
 
