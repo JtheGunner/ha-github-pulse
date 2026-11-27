@@ -94,6 +94,8 @@ To replace the token, open the integration, choose **Reconfigure** and enter the
 | 🧪 | Custom queries   | Your own read-only GraphQL query as a sensor, added under **Add custom query**. Rendered with templates over `value_json`. Presets included; see the [guide](docs/custom-queries.md)                                                                                                                                                                                                                              |
 | ➕ | Optional sensors | Reviews, issues, active days, strongest weekday, watchers, release downloads, days since last commit or release, pull requests awaiting your review, most active hour and night-owl score (approximate, from GitHub's last 300 events), average time to merge (last 50 merged pull requests), stale pull requests (open, untouched for 14 days), year in review (one-line summary with the details as attributes), followers and following counts, repository traffic (unique visitors and cloners and page views and clones over the last 14 days, peak visitor day, top referrer and page, visitor trend, cloners per visitor; needs write access, see [Access token](#-access-token)) |
 
+Every entity has its own icon. The CI state, the last workflow result and the "workflow running" binary sensor change their icon with their state, and custom query sensors use a code icon. You can still override any icon per entity in Home Assistant.
+
 Everything marked optional is created disabled. GitHub Pulse only fetches data that an enabled entity needs, so unused sensors cost no API calls.
 
 > [!NOTE]
