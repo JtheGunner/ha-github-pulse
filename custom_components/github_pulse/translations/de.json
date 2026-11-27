@@ -20,10 +20,11 @@
         }
       },
       "reconfigure": {
-        "title": "Erfasste Daten ändern",
-        "description": "Das gespeicherte Token wird für jedes gewählte Modul geprüft.",
+        "title": "Erfassung oder Token ändern",
+        "description": "Das Token wird für jedes gewählte Modul geprüft. Lass das Token leer, um das aktuelle zu behalten; ein neues Token muss zum selben GitHub-Konto gehören.",
         "data": {
-          "modules": "Was möchtest du erfassen?"
+          "modules": "Was möchtest du erfassen?",
+          "access_token": "Neues Zugriffstoken (optional)"
         }
       }
     },
@@ -38,7 +39,7 @@
     "abort": {
       "already_configured": "Dieses GitHub-Konto ist bereits eingerichtet.",
       "reauth_successful": "Das neue Token wurde gespeichert.",
-      "reconfigure_successful": "Die erfassten Module wurden aktualisiert."
+      "reconfigure_successful": "Die Einstellungen wurden aktualisiert."
     }
   },
   "options": {

@@ -73,6 +73,8 @@ You need **one** token. It serves every module you enable. A classic token with 
 
 The setup checks the token against every module you select and tells you what is missing. The full endpoint list is in the [permission matrix](docs/permission-matrix.md).
 
+To replace the token, open the integration, choose **Reconfigure** and enter the new token. It must belong to the same GitHub account. Leave the field empty to keep the current token.
+
 > [!IMPORTANT]
 > Fine-grained tokens belong to a single owner and cannot read Packages. Use a classic token if you need more.
 

@@ -20,10 +20,11 @@
         }
       },
       "reconfigure": {
-        "title": "Change what is tracked",
-        "description": "The stored token is checked against every module you select.",
+        "title": "Change tracking or token",
+        "description": "The stored token is checked against every module you select. Leave the token empty to keep the current one; a new token must belong to the same GitHub account.",
         "data": {
-          "modules": "What do you want to track?"
+          "modules": "What do you want to track?",
+          "access_token": "New access token (optional)"
         }
       }
     },
@@ -38,7 +39,7 @@
     "abort": {
       "already_configured": "This GitHub account is already configured.",
       "reauth_successful": "The new token was saved.",
-      "reconfigure_successful": "The tracked modules were updated."
+      "reconfigure_successful": "The settings were updated."
     }
   },
   "options": {
