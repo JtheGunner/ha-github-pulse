@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- A **Repairs** notice when a refresh fails because GitHub's rate limit is used up or the token is refused. It names the affected data group and, for a rate limit, when it resets, and disappears after the next successful refresh.
+
+### Changed
+
+- Repositories are now requested in batches of 10 instead of 50, so the first refresh of a long repository list no longer risks running into Home Assistant's startup limits.
+
 ## [1.5.0] - 2026-11-27
 
 ### Added

@@ -9,13 +9,25 @@ from typing import Any, override
 
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
 
-from .api import GitHubAuthError, GitHubClient, GitHubError
-from .const import LOGGER
+from .api import (
+    GitHubAuthError,
+    GitHubClient,
+    GitHubError,
+    GitHubForbiddenError,
+    GitHubRateLimitError,
+)
+from .const import DOMAIN, LOGGER
 from .models import GitHubPulseConfigEntry
 
 SLOWDOWN_FACTOR = 4
+
+ISSUE_RATE_LIMITED = "rate_limited"
+ISSUE_FORBIDDEN = "forbidden"
+_ISSUE_KINDS = (ISSUE_RATE_LIMITED, ISSUE_FORBIDDEN)
 
 type GroupFetcher = Callable[[], Awaitable[Any]]
 
@@ -27,6 +39,8 @@ class GitHubPulseCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     * A group that fails keeps its last good value; the error is kept in
       :attr:`errors`. The update only fails when every active group failed.
     * An authentication error starts reauthentication.
+    * A rate-limit or permission error raises a repair issue that clears once
+      the group refreshes again.
     * While the rate budget of ``rate_resource`` is low, polling slows down.
     """
 
@@ -77,6 +91,7 @@ class GitHubPulseCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             if isinstance(error, GitHubAuthError):
                 raise ConfigEntryAuthFailed(str(error)) from error
         self.errors = {group: str(error) for group, error in failures.items()}
+        self._sync_repair_issues(successes, failures)
         self._adapt_interval()
 
         if failures and not successes:
@@ -92,9 +107,56 @@ class GitHubPulseCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             LOGGER.debug("Group %s failed: %s", group, err)
             return group, None, err
 
+    def _issue_id(self, group: str, kind: str) -> str:
+        return f"{self.config_entry.entry_id}_{self.name}_{group}_{kind}"
+
+    def _sync_repair_issues(
+        self, successes: Mapping[str, Any], failures: Mapping[str, GitHubError]
+    ) -> None:
+        """Raise a repair issue per rate-limited or forbidden group, clear the rest."""
+        for group in successes:
+            for kind in _ISSUE_KINDS:
+                ir.async_delete_issue(self.hass, DOMAIN, self._issue_id(group, kind))
+        for group, error in failures.items():
+            if isinstance(error, GitHubRateLimitError):
+                kind = ISSUE_RATE_LIMITED
+            elif isinstance(error, GitHubForbiddenError):
+                kind = ISSUE_FORBIDDEN
+            else:
+                continue
+            for other in _ISSUE_KINDS:
+                if other != kind:
+                    ir.async_delete_issue(
+                        self.hass, DOMAIN, self._issue_id(group, other)
+                    )
+            ir.async_create_issue(
+                self.hass,
+                DOMAIN,
+                self._issue_id(group, kind),
+                is_fixable=False,
+                severity=ir.IssueSeverity.WARNING,
+                translation_key=kind,
+                translation_placeholders={
+                    "name": self.name or "",
+                    "group": group,
+                    "reset": _format_reset(error),
+                    "detail": str(error),
+                },
+            )
+
     def _adapt_interval(self) -> None:
         """Slow polling down while the rate budget is nearly spent."""
         low = self.client.budget.is_low(self._rate_resource)
         self.update_interval = (
             self._base_interval * SLOWDOWN_FACTOR if low else self._base_interval
         )
+
+
+def _format_reset(error: GitHubError) -> str:
+    """Return the local time the rate limit resets, or a dash when unknown."""
+    reset_at = getattr(error, "reset_at", None)
+    if reset_at is None:
+        return "-"
+    return dt_util.as_local(dt_util.utc_from_timestamp(reset_at)).strftime(
+        "%Y-%m-%d %H:%M"
+    )

@@ -397,6 +397,16 @@
       "message": "Das GraphQL-Ratenbudget ist fast aufgebraucht. Versuche es nach dem Zurücksetzen erneut."
     }
   },
+  "issues": {
+    "rate_limited": {
+      "title": "GitHub-Rate-Limit erreicht",
+      "description": "GitHub Pulse konnte {name} ({group}) nicht aktualisieren, weil das GitHub-Rate-Limit aufgebraucht ist. Die Werte bleiben auf dem letzten bekannten Stand. Das Limit wird um {reset} zurückgesetzt. GitHub meldete: {detail}"
+    },
+    "forbidden": {
+      "title": "GitHub hat eine Anfrage abgelehnt",
+      "description": "GitHub Pulse konnte {name} ({group}) nicht aktualisieren, weil GitHub die Anfrage abgelehnt hat. Dem Zugriffstoken fehlt womöglich eine Berechtigung oder ein Scope. GitHub meldete: {detail}"
+    }
+  },
   "config_subentries": {
     "repository": {
       "initiate_flow": {

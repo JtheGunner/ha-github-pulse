@@ -10,6 +10,8 @@ import pytest
 from custom_components.github_pulse.api import (
     GitHubAuthError,
     GitHubClient,
+    GitHubForbiddenError,
+    GitHubRateLimitError,
     GitHubTransportError,
 )
 from custom_components.github_pulse.const import (
@@ -26,6 +28,7 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_ACCESS_TOKEN
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import UpdateFailed
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -177,6 +180,141 @@ async def test_polling_slows_down_while_the_budget_is_low(
     )
     await coordinator._async_update_data()
     assert coordinator.update_interval == INTERVAL
+
+
+def _issue_ids(hass: HomeAssistant) -> set[str]:
+    return {
+        issue_id for domain, issue_id in ir.async_get(hass).issues if domain == DOMAIN
+    }
+
+
+async def test_rate_limit_failure_raises_a_repair_issue(
+    hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
+) -> None:
+    entry = await _entry(hass, patch_session)
+    coordinator = _coordinator(
+        hass,
+        entry,
+        {
+            "a": _value(1),
+            "b": _failing(GitHubRateLimitError("limit", reset_at=1893456000.0)),
+        },
+        {"a", "b"},
+    )
+
+    await coordinator._async_update_data()
+
+    issue = ir.async_get(hass).async_get_issue(
+        DOMAIN, f"{entry.entry_id}_test_b_rate_limited"
+    )
+    assert issue is not None
+    assert issue.translation_key == "rate_limited"
+    assert issue.is_fixable is False
+    assert issue.translation_placeholders is not None
+    assert issue.translation_placeholders["group"] == "b"
+    assert issue.translation_placeholders["reset"][:4] in {"2029", "2030"}
+
+
+async def test_rate_limit_without_reset_time_still_raises_an_issue(
+    hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
+) -> None:
+    entry = await _entry(hass, patch_session)
+    coordinator = _coordinator(
+        hass, entry, {"a": _failing(GitHubRateLimitError("limit"))}, {"a"}
+    )
+
+    with pytest.raises(UpdateFailed):
+        await coordinator._async_update_data()
+
+    assert f"{entry.entry_id}_test_a_rate_limited" in _issue_ids(hass)
+
+
+async def test_forbidden_failure_raises_a_repair_issue(
+    hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
+) -> None:
+    entry = await _entry(hass, patch_session)
+    coordinator = _coordinator(
+        hass,
+        entry,
+        {"a": _value(1), "b": _failing(GitHubForbiddenError("no scope"))},
+        {"a", "b"},
+    )
+
+    await coordinator._async_update_data()
+
+    assert f"{entry.entry_id}_test_b_forbidden" in _issue_ids(hass)
+
+
+async def test_other_failures_raise_no_repair_issue(
+    hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
+) -> None:
+    entry = await _entry(hass, patch_session)
+    coordinator = _coordinator(
+        hass,
+        entry,
+        {"a": _value(1), "b": _failing(GitHubTransportError("down"))},
+        {"a", "b"},
+    )
+
+    await coordinator._async_update_data()
+
+    assert _issue_ids(hass) == set()
+
+
+async def test_repair_issue_clears_after_a_successful_refresh(
+    hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
+) -> None:
+    entry = await _entry(hass, patch_session)
+    limited = True
+
+    async def flaky() -> int:
+        if limited:
+            raise GitHubRateLimitError("limit")
+        return 2
+
+    coordinator = _coordinator(hass, entry, {"a": _value(1), "b": flaky}, {"a", "b"})
+    await coordinator._async_update_data()
+    assert f"{entry.entry_id}_test_b_rate_limited" in _issue_ids(hass)
+
+    limited = False
+    await coordinator._async_update_data()
+
+    assert _issue_ids(hass) == set()
+
+
+async def test_switching_error_kind_replaces_the_issue(
+    hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
+) -> None:
+    entry = await _entry(hass, patch_session)
+    error: GitHubRateLimitError | GitHubForbiddenError = GitHubRateLimitError("limit")
+
+    async def flaky() -> int:
+        raise error
+
+    coordinator = _coordinator(hass, entry, {"a": _value(1), "b": flaky}, {"a", "b"})
+    await coordinator._async_update_data()
+    error = GitHubForbiddenError("no scope")
+    await coordinator._async_update_data()
+
+    assert _issue_ids(hass) == {f"{entry.entry_id}_test_b_forbidden"}
+
+
+async def test_unloading_the_entry_removes_its_repair_issues(
+    hass: HomeAssistant, patch_session: Callable[[FakeSession], None]
+) -> None:
+    entry = await _entry(hass, patch_session)
+    coordinator = _coordinator(
+        hass,
+        entry,
+        {"a": _value(1), "b": _failing(GitHubRateLimitError("limit"))},
+        {"a", "b"},
+    )
+    await coordinator._async_update_data()
+    assert _issue_ids(hass)
+
+    assert await hass.config_entries.async_unload(entry.entry_id)
+
+    assert _issue_ids(hass) == set()
 
 
 def test_entry_state_import_is_used() -> None:

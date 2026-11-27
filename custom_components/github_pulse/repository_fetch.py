@@ -17,7 +17,7 @@ from .analytics.periods import (
 )
 from .api import GitHubClient
 
-BATCH_SIZE = 50
+BATCH_SIZE = 10
 COMMIT_PAGE = 100
 _TIME = "%Y-%m-%dT%H:%M:%SZ"
 

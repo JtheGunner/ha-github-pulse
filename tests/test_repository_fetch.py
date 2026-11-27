@@ -131,6 +131,10 @@ async def test_adding_a_repository_does_not_add_a_request() -> None:
     assert one.graphql.await_count == ten.graphql.await_count == 1
 
 
+def test_batches_stay_small_enough_for_a_fast_first_refresh() -> None:
+    assert BATCH_SIZE <= 10
+
+
 async def test_very_long_lists_are_split_into_batches() -> None:
     client = _client()
 
