@@ -225,6 +225,7 @@ class QuerySensor(GitHubPulseEntity, SensorEntity):
         self._attr_device_info = None
         data = subentry.data
         self._attr_name = subentry.title
+        self._attr_icon = "mdi:code-braces"
         self._attr_native_unit_of_measurement = data.get(CONF_UNIT) or None
         if device_class := data.get(CONF_DEVICE_CLASS):
             self._attr_device_class = SensorDeviceClass(device_class)

@@ -102,6 +102,7 @@ async def test_the_sensor_shows_the_rendered_result(
     assert state.attributes["login"] == "octocat"
     assert state.attributes["unit_of_measurement"] == "repos"
     assert state.attributes["state_class"] == "measurement"
+    assert state.attributes["icon"] == "mdi:code-braces"
 
 
 async def test_device_class_is_applied(
